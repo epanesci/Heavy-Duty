@@ -14,32 +14,81 @@
 <style>
   html, body { margin: 0; padding: 0; background: #14161A; }
   #boot {
-    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    position: fixed; inset: 0; padding: 24px; overflow: auto;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
     color: #8A8D93; font-family: monospace; font-size: 13px; letter-spacing: 1px;
+    text-align: center;
   }
+  #boot.error { color: #E8E6E1; justify-content: flex-start; text-align: left; letter-spacing: 0; }
+  #boot .title { color: #C81E3A; font-weight: bold; margin-bottom: 10px; letter-spacing: 1px; }
+  #boot pre { white-space: pre-wrap; word-break: break-word; font-size: 11px; line-height: 1.5; margin: 0 0 14px; }
 </style>
 </head>
 <body>
 <div id="root"></div>
 <div id="boot">LOADING…</div>
 
-<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+<script>
+  // Show failures on screen — there is no dev console on a phone.
+  window.__errors = [];
+  function showError(label, detail) {
+    window.__errors.push(label + (detail ? ': ' + detail : ''));
+    var boot = document.getElementById('boot');
+    if (!boot) return;
+    boot.className = 'error';
+    boot.innerHTML = '<div class="title">STARTUP ERROR</div><pre>' +
+      window.__errors.join('\n\n').replace(/[<>&]/g, function (c) {
+        return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c];
+      }) + '</pre>';
+  }
+  window.addEventListener('error', function (e) {
+    if (e.message) showError('JS error', e.message + (e.lineno ? ' (line ' + e.lineno + ')' : ''));
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    showError('Promise error', String(e.reason));
+  });
+</script>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin
+        onerror="showError('Could not load React from unpkg')"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin
+        onerror="showError('Could not load ReactDOM from unpkg')"></script>
 <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js" crossorigin></script>
 <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js" crossorigin></script>
-<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js" crossorigin
+        onerror="showError('Could not load Babel from unpkg')"></script>
+
+<script>
+  // Recharts UMD filename differs between versions; try a fallback if the first missed.
+  if (!window.Recharts) {
+    document.write('<script src="https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.min.js" crossorigin><\/script>');
+  }
+</script>
 
 <script type="text/babel" src="app.jsx" data-presets="react"></script>
 
 <script>
-  // Hide the boot message once React has painted something.
   var boot = document.getElementById('boot');
+  var waited = 0;
   var check = setInterval(function () {
     if (document.getElementById('root').childElementCount > 0) {
-      boot.remove();
+      if (boot) boot.remove();
       clearInterval(check);
+      return;
     }
-  }, 100);
+    waited += 200;
+    if (waited >= 8000 && window.__errors.length === 0) {
+      clearInterval(check);
+      var missing = [];
+      if (!window.React) missing.push('React');
+      if (!window.ReactDOM) missing.push('ReactDOM');
+      if (!window.Babel) missing.push('Babel');
+      if (!window.Recharts) missing.push('Recharts (charts only)');
+      showError('App did not start after 8s',
+        missing.length ? 'Missing libraries: ' + missing.join(', ')
+                       : 'Libraries loaded, but app.jsx did not render. Check that app.jsx sits next to index.html.');
+    }
+  }, 200);
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
