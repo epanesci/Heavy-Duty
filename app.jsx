@@ -78,6 +78,7 @@ const STRINGS = {
     orManual: "Not found — type the values below", pickedFrom: "auto-calculated from database",
     historyFor: "History for", leanMassKg: "Lean mass (kg)", saveChanges: "SAVE CHANGES", add: "ADD",
     logSession: "LOG SESSION", positive: "positive", slowNegatives: "slow negatives", hold: "hold", repsWord: "reps",
+    saveDay: "SAVE DAY",
   },
   es: {
     tagline: "UNA SERIE. AL FALLO. SIN EXCUSAS.",
@@ -128,6 +129,7 @@ const STRINGS = {
     orManual: "No encontrado — cargá los valores abajo", pickedFrom: "calculado desde la base",
     historyFor: "Historial de", leanMassKg: "Masa magra (kg)", saveChanges: "GUARDAR CAMBIOS", add: "AGREGAR",
     logSession: "REGISTRAR SESIÓN", positive: "positivas", slowNegatives: "negativas lentas", hold: "isométrico", repsWord: "reps",
+    saveDay: "GUARDAR DÍA",
   },
 };
 
@@ -422,9 +424,33 @@ function buildStarterBodystats() {
   return out;
 }
 
+// A plain, balanced starting diet (~2500 kcal) so a new user has something to
+// edit rather than four empty screens. Values come from FOOD_DB per 100 g.
+function starterItem(dbName, qty, id) {
+  const f = FOOD_DB.find((x) => x.n === dbName);
+  if (!f) return null;
+  const v = scaleFood(f, qty);
+  return {
+    id,
+    name: foodLabel(f),
+    amount: f.u === "u" ? String(qty) : `${qty} g`,
+    calories: v.calories, carbs: v.carbs, protein: v.protein, fat: v.fat, fiber: v.fiber,
+    notes: "",
+  };
+}
+
 function buildStarterMealPlans() {
+  const spec = {
+    A: [["Oats", 80], ["Whole milk", 250], ["Banana", 120], ["Peanut butter", 20]],
+    B: [["Chicken breast", 180], ["White rice, raw", 100], ["Mixed vegetables", 150], ["Olive oil", 10]],
+    C: [["Greek yogurt", 200], ["Almonds", 30], ["Apple", 150]],
+    D: [["Beef, lean", 150], ["Potato", 250], ["Broccoli", 150], ["Olive oil", 10]],
+  };
   return MEAL_KEYS.reduce((acc, k) => {
-    acc[k] = { label: "", items: [] };
+    const items = (spec[k] || [])
+      .map(([n, q], i) => starterItem(n, q, `starter-${k}${i}`))
+      .filter(Boolean);
+    acc[k] = { label: "", items };
     return acc;
   }, {});
 }
@@ -1337,7 +1363,7 @@ function App() {
     await setBodystats(buildStarterBodystats());
     await setMealPlans(buildStarterMealPlans());
     await setNotes("");
-    await setSettings({ lastRoutineIndex: getCycle(levelKey).length - 1, level: levelKey, onboarded: true });
+    await setSettings({ ...settings, lastRoutineIndex: getCycle(levelKey).length - 1, level: levelKey, onboarded: true });
     setTab("train");
   };
 
@@ -1665,7 +1691,7 @@ function RoutineEdit({ routineKey, config, level, onCancel, onSave }) {
         }));
         onSave(routineKey, sanitized);
       }} style={{ ...btnPrimary, width: "100%", marginTop: 6 }}>
-        <Check size={16} /> SAVE DAY
+        <Check size={16} /> {t("saveDay")}
       </button>
     </div>
   );
@@ -1761,11 +1787,11 @@ function Food({ mealPlans, setMealPlans }) {
   const [openPlan, setOpenPlan] = useState(null);
 
   if (openPlan) {
-    return <MealPlanDetail planKey={openPlan} plan={mealPlans[openPlan]} allPlans={mealPlans} setMealPlans={setMealPlans} onBack={() => setOpenPlan(null)} />;
+    return <MealPlanDetail planKey={openPlan} plan={mealPlans[openPlan] || { label: "", items: [] }} allPlans={mealPlans} setMealPlans={setMealPlans} onBack={() => setOpenPlan(null)} />;
   }
 
   const dayTotals = MEAL_KEYS.reduce((acc, key) => {
-    mealPlans[key].items.forEach((it) => {
+    ((mealPlans[key] && mealPlans[key].items) || []).forEach((it) => {
       acc.kcal += Number(it.calories) || 0;
       acc.carbs += Number(it.carbs) || 0;
       acc.protein += Number(it.protein) || 0;
@@ -1778,8 +1804,8 @@ function Food({ mealPlans, setMealPlans }) {
   return (
     <div>
       {MEAL_KEYS.map((key) => {
-        const plan = mealPlans[key];
-        const t = plan.items.reduce((acc, m) => {
+        const plan = mealPlans[key] || { label: "", items: [] };
+        const tot = (plan.items || []).reduce((acc, m) => {
           acc.kcal += Number(m.calories) || 0;
           acc.carbs += Number(m.carbs) || 0;
           acc.protein += Number(m.protein) || 0;
@@ -1790,27 +1816,27 @@ function Food({ mealPlans, setMealPlans }) {
         return (
           <button key={key} onClick={() => setOpenPlan(key)} style={{ ...card, padding: "10px 12px", marginBottom: 8, width: "100%", textAlign: "left", cursor: "pointer" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span className="disp" style={{ fontSize: 16, fontWeight: 700, textTransform: "uppercase" }}>Meal {key}{plan.label ? <span className="mono" style={{ fontSize: 11, color: "#8A8D93", textTransform: "none", fontWeight: 400 }}> · {plan.label}</span> : null}</span>
+              <span className="disp" style={{ fontSize: 16, fontWeight: 700, textTransform: "uppercase" }}>{t("meal")} {key}{plan.label ? <span className="mono" style={{ fontSize: 11, color: "#8A8D93", textTransform: "none", fontWeight: 400 }}> · {plan.label}</span> : null}</span>
               <ChevronRight size={16} color="#8A8D93" style={{ flexShrink: 0 }} />
             </div>
-            {plan.items.length === 0 ? (
+            {(plan.items || []).length === 0 ? (
               <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginTop: 6 }}>{t("noFoodsLogged")}</div>
             ) : (
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: 5, gap: 10 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  {plan.items.map((it) => (
+                  {(plan.items || []).map((it) => (
                     <div key={it.id} className="mono" style={{ fontSize: 11, color: "#8A8D93", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       • {it.name}{it.amount ? ` ${it.amount}` : ""}
                     </div>
                   ))}
                 </div>
                 <div style={{ flexShrink: 0, textAlign: "left" }}>
-                  <div className="mono" style={{ fontSize: 13, color: "#C81E3A", fontWeight: 600 }}>{Math.round(t.kcal)} kcal</div>
+                  <div className="mono" style={{ fontSize: 13, color: "#C81E3A", fontWeight: 600 }}>{Math.round(tot.kcal)} kcal</div>
                   <div className="mono" style={{ fontSize: 12, color: "#8A8D93", marginTop: 4, display: "grid", gridTemplateColumns: "46px auto", rowGap: 2 }}>
-                    <span><span style={{ display: "inline-block", width: 16 }}>C</span>{t.carbs}</span>
-                    <span><span style={{ display: "inline-block", width: 16 }}>P</span>{t.protein}</span>
-                    <span><span style={{ display: "inline-block", width: 16 }}>F</span>{t.fat}</span>
-                    <span><span style={{ display: "inline-block", width: 16, color: "#C81E3A" }}>F</span>{t.fiber}</span>
+                    <span><span style={{ display: "inline-block", width: 16 }}>C</span>{tot.carbs}</span>
+                    <span><span style={{ display: "inline-block", width: 16 }}>P</span>{tot.protein}</span>
+                    <span><span style={{ display: "inline-block", width: 16 }}>F</span>{tot.fat}</span>
+                    <span><span style={{ display: "inline-block", width: 16, color: "#C81E3A" }}>F</span>{tot.fiber}</span>
                   </div>
                 </div>
               </div>
@@ -1986,7 +2012,7 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, onBack }) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button onClick={onBack} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={20} /></button>
-          <span className="disp" style={{ fontSize: 18, textTransform: "uppercase" }}>Meal {planKey}</span>
+          <span className="disp" style={{ fontSize: 18, textTransform: "uppercase" }}>{t("meal")} {planKey}</span>
         </div>
         <button onClick={() => { setMode(mode === "view" ? "edit" : "view"); if (mode === "edit") cancelEdit(); }} style={{ background: "none", border: "none", color: mode === "edit" ? "#C81E3A" : "#8A8D93", cursor: "pointer" }}>
           {mode === "view" ? <Settings2 size={18} /> : <Check size={18} />}
