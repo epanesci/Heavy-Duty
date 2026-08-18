@@ -1848,7 +1848,7 @@ function Food({ mealPlans, setMealPlans }) {
       {/* The four meals fill exactly one screen; the daily total sits below the
           fold on purpose, so it takes a deliberate scroll to reach. */}
       {/* Ends short of the nav bar so meal D doesn't sit flush against it. */}
-      <div className="fill-screen" style={{ height: "calc(100dvh - var(--hd-header) - var(--hd-nav) - var(--hd-mainpad) - 14px)" }}>
+      <div className="fill-screen" style={{ height: "calc(100dvh - var(--hd-header) - var(--hd-nav) - var(--hd-mainpad) - 28px)" }}>
       {MEAL_KEYS.map((key) => {
         const plan = mealPlans[key] || { label: "", items: [] };
         const tot = (plan.items || []).reduce((acc, m) => {
@@ -1893,7 +1893,7 @@ function Food({ mealPlans, setMealPlans }) {
       })}
       </div>
 
-      <div style={{ marginTop: 24 }}>
+      <div style={{ marginTop: 40 }}>
         <SectionLabel>{t("dailyTotal")}</SectionLabel>
         <div style={{ ...card, padding: 14 }}>
           <div style={{ textAlign: "center", marginBottom: 10 }}>
