@@ -1389,13 +1389,23 @@ function App() {
         button { color: inherit; font-family: inherit; }
         /* Height available to a screen: viewport minus header, nav bar and main padding.
            dvh follows the mobile browser chrome as it hides/shows. */
-        :root { --hd-header: 54px; --hd-nav: 62px; --hd-pad: 24px; }
-        .fill-screen {
-          display: flex;
-          flex-direction: column;
-          height: calc(100dvh - var(--hd-header) - var(--hd-nav) - var(--hd-pad));
-          min-height: 380px;
+        /* Measured from the real header/nav paddings; the nav grows with the
+           phone's gesture bar, so its inset is part of the calculation. */
+        :root {
+          --hd-header: 53px;
+          --hd-nav: calc(64px + max(0px, env(safe-area-inset-bottom) - 8px));
         }
+        /* The content area owns the scrolling and has an exact height, so the
+           bottom nav stays put and nothing ever slides under it. */
+        html, body { overflow: hidden; overscroll-behavior: none; }
+        .hd-main {
+          height: calc(100dvh - var(--hd-header) - var(--hd-nav));
+          box-sizing: border-box;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        /* A screen that fills exactly the visible area, no more, no less. */
+        .fill-screen { display: flex; flex-direction: column; height: 100%; min-height: 320px; }
         .fill-screen > .grow { flex: 1 1 0; min-height: 0; overflow: hidden; }
         ::selection { background: #C81E3A; color: #fff; }
       `}</style>
@@ -1413,7 +1423,7 @@ function App() {
         </div>
       </header>
 
-      <main style={{ padding: "12px 12px 92px", maxWidth: 560, margin: "0 auto" }}>
+      <main className="hd-main" style={{ padding: "12px 12px 14px", maxWidth: 560, margin: "0 auto" }}>
         {!ready ? (
           <div style={{ textAlign: "center", padding: 60, color: "#8A8D93" }} className="mono">{t("loading")}</div>
         ) : !settings.lang ? (
@@ -2239,8 +2249,12 @@ function BodyComposition({ bodystats, setBodystats }) {
                 <span className="mono" style={{ fontSize: 11, color: "#8A8D93" }}>{fmtDate(b.date)}</span>
                 <span className="mono" style={{ fontSize: 12, color: "#C81E3A" }}>{b.weight} kg</span>
               </div>
-              <div className="mono" style={{ fontSize: 12, color: "#E8E6E1", marginTop: 4 }}>
-                {t("fatShort")} {b.bodyFat}% · {t("leanShort")} {b.lean}kg{b.ffmi ? ` · FFMI ${b.ffmi}` : ""}
+              {/* Fixed columns: values carry a variable number of decimals, so a
+                  plain inline row would shift on every entry. */}
+              <div className="mono" style={{ fontSize: 12, color: "#E8E6E1", marginTop: 4, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+                <span><span style={{ color: "#8A8D93" }}>{t("fatShort")} </span>{b.bodyFat}%</span>
+                <span><span style={{ color: "#8A8D93" }}>{t("leanShort")} </span>{b.lean}kg</span>
+                <span>{b.ffmi ? <><span style={{ color: "#8A8D93" }}>FFMI </span>{b.ffmi}</> : ""}</span>
               </div>
             </div>
           ))}
