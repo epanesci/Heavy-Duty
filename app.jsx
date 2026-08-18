@@ -135,6 +135,18 @@ const STRINGS = {
   },
 };
 
+function useIsWide() {
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 900px)");
+    const apply = (e) => setWide(e.matches);
+    apply(mq);
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+  return wide;
+}
+
 let CURRENT_LANG = "en";
 function t(key) {
   return (STRINGS[CURRENT_LANG] && STRINGS[CURRENT_LANG][key]) || STRINGS.en[key] || key;
@@ -1325,6 +1337,8 @@ function App() {
   const [notes, setNotes, nLoaded] = useStorage(STORAGE_KEYS.notes, "");
   const ready = sLoaded && wLoaded && rLoaded && mLoaded && bLoaded && nLoaded;
   const [showSettings, setShowSettings] = useState(false);
+  const isWide = useIsWide();
+  const railShown = isWide && ready && settings.lang && settings.onboarded;
   CURRENT_LANG = settings.lang || "en";
 
   const pickLang = async (lang) => { await setSettings({ ...settings, lang }); };
@@ -1415,10 +1429,49 @@ function App() {
           min-height: 320px;
         }
         .fill-screen > .grow { flex: 1 1 0; min-height: 0; overflow: hidden; }
+
+        /* ---------- Desktop: side rail instead of a bottom bar ---------- */
+        @media (min-width: 900px) {
+          :root { --hd-nav: 0px; }
+          .hd-shell { display: flex; height: 100dvh; }
+          .hd-side {
+            width: 208px; flex-shrink: 0; background: #1E2126;
+            border-right: 1px solid #2A2D33; display: flex; flex-direction: column;
+            padding: 20px 12px;
+          }
+          .hd-side .side-btn {
+            display: flex; align-items: center; gap: 12px; width: 100%;
+            background: none; border: none; padding: 11px 12px; cursor: pointer;
+            text-align: left; border-left: 3px solid transparent;
+          }
+          .hd-side .side-btn.active { background: #14161A; border-left-color: #C81E3A; }
+          .hd-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+          .hd-main.no-header { height: 100dvh; }
+          /* Wide screens have room to show the four cards side by side. */
+          .wide-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+          .wide-grid > .grow { flex: none; overflow: visible; }
+          .fill-screen.wide-grid { height: auto; min-height: 0; }
+        }
         ::selection { background: #C81E3A; color: #fff; }
       `}</style>
 
-      <header style={{ padding: "14px 16px 12px", borderBottom: "1px solid #2A2D33" }}>
+      <div className={isWide ? "hd-shell" : undefined}>
+      {isWide && ready && settings.lang && settings.onboarded && (
+        <aside className="hd-side">
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 12px 22px" }}>
+            <div style={{ width: 6, height: 26, background: "#C81E3A" }} />
+            <span className="disp" style={{ fontSize: 20, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>Heavy Duty</span>
+          </div>
+          <SideBtn icon={<Flame size={18} />} label={t("train")} active={tab === "train"} onClick={() => setTab("train")} />
+          <SideBtn icon={<Utensils size={18} />} label={t("food")} active={tab === "food"} onClick={() => setTab("food")} />
+          <SideBtn icon={<TrendingUp size={18} />} label={t("progress")} active={tab === "progress"} onClick={() => setTab("progress")} />
+          <SideBtn icon={<BookOpen size={18} />} label={t("books")} active={tab === "books"} onClick={() => setTab("books")} />
+          <div style={{ flex: 1 }} />
+          <SideBtn icon={<Settings2 size={18} />} label={t("settings")} active={showSettings} onClick={() => setShowSettings((v) => !v)} />
+        </aside>
+      )}
+      <div className={isWide ? "hd-body" : undefined}>
+      <header style={{ padding: "14px 16px 12px", borderBottom: "1px solid #2A2D33", display: railShown ? "none" : "block" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 6, height: 26, background: "#C81E3A" }} />
           <h1 className="disp" style={{ fontSize: 22, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", margin: 0, flex: 1 }}>Heavy Duty</h1>
@@ -1431,7 +1484,7 @@ function App() {
         </div>
       </header>
 
-      <main className="hd-main" style={{ padding: "12px 12px 14px", maxWidth: 560, margin: "0 auto" }}>
+      <main className={"hd-main" + (railShown ? " no-header" : "")} style={{ padding: isWide ? "20px 24px 24px" : "12px 12px 14px", maxWidth: isWide ? 1100 : 560, margin: "0 auto", width: "100%" }}>
         {!ready ? (
           <div style={{ textAlign: "center", padding: 60, color: "#8A8D93" }} className="mono">{t("loading")}</div>
         ) : !settings.lang ? (
@@ -1455,7 +1508,10 @@ function App() {
         )}
       </main>
 
-      {ready && settings.lang && settings.onboarded && !showSettings && (
+      </div>
+      </div>
+
+      {!isWide && ready && settings.lang && settings.onboarded && !showSettings && (
         <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#1E2126", borderTop: "1px solid #2A2D33", display: "flex", padding: "8px 0 max(8px, env(safe-area-inset-bottom))" }}>
           <NavBtn icon={<Flame size={19} />} label={t("train")} active={tab === "train"} onClick={() => setTab("train")} />
           <NavBtn icon={<Utensils size={19} />} label={t("food")} active={tab === "food"} onClick={() => setTab("food")} />
@@ -1464,6 +1520,16 @@ function App() {
         </nav>
       )}
     </div>
+  );
+}
+
+function SideBtn({ icon, label, active, onClick }) {
+  return (
+    <button onClick={onClick} className={"side-btn" + (active ? " active" : "")}
+      style={{ color: active ? "#C81E3A" : "#8A8D93" }}>
+      {icon}
+      <span className="disp" style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+    </button>
   );
 }
 
@@ -1478,6 +1544,7 @@ function NavBtn({ icon, label, active, onClick }) {
 
 // ---------------- TRAINING ----------------
 function Training({ settings, setSettings, workouts, setWorkouts, routineConfig, setRoutineConfig }) {
+  const isWide = useIsWide();
   const level = settings.level || DEFAULT_LEVEL;
   const cycle = getCycle(level);
   const routines = getRoutines(level);
@@ -1509,11 +1576,11 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
   }
 
   return (
-    <div className={historyOpen ? undefined : "fill-screen"}>
+    <div className={isWide ? "wide-grid" : (historyOpen ? undefined : "fill-screen")}>
       {cycle.map((key) => (
         <button key={key} onClick={() => setScreen({ mode: "view", key })}
-          className={historyOpen ? undefined : "grow"}
-          style={{ ...card, marginBottom: 8, width: "100%", textAlign: "left", cursor: "pointer", display: "block" }}>
+          className={isWide ? undefined : (historyOpen ? undefined : "grow")}
+          style={{ ...card, marginBottom: isWide ? 0 : 8, width: "100%", textAlign: "left", cursor: "pointer", display: "block" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 7, minWidth: 0 }}>
@@ -1547,7 +1614,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
         </button>
       ))}
 
-      <div style={{ marginTop: historyOpen ? 18 : 4, flexShrink: 0 }}>
+      <div style={{ marginTop: historyOpen ? 18 : (isWide ? 18 : 4), flexShrink: 0, gridColumn: isWide ? "1 / -1" : undefined }}>
         <button onClick={() => setHistoryOpen((v) => !v)} style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <SectionLabel>{t("history")}</SectionLabel>
           <ChevronDown size={16} color="#8A8D93" style={{ transform: historyOpen ? "rotate(180deg)" : "none" }} />
@@ -1827,6 +1894,7 @@ function LogSession({ routineKey, config, workouts, level, onCancel, onFinish })
 // ---------------- FOOD ----------------
 function Food({ mealPlans, setMealPlans }) {
   const [openPlan, setOpenPlan] = useState(null);
+  const isWide = useIsWide();
 
   if (openPlan) {
     return <MealPlanDetail planKey={openPlan} plan={mealPlans[openPlan] || { label: "", items: [] }} allPlans={mealPlans} setMealPlans={setMealPlans} onBack={() => setOpenPlan(null)} />;
@@ -1848,7 +1916,8 @@ function Food({ mealPlans, setMealPlans }) {
       {/* The four meals fill exactly one screen; the daily total sits below the
           fold on purpose, so it takes a deliberate scroll to reach. */}
       {/* Ends short of the nav bar so meal D doesn't sit flush against it. */}
-      <div className="fill-screen" style={{ height: "calc(100dvh - var(--hd-header) - var(--hd-nav) - var(--hd-mainpad) - 28px)" }}>
+      <div className={isWide ? "wide-grid" : "fill-screen"}
+        style={isWide ? undefined : { height: "calc(100dvh - var(--hd-header) - var(--hd-nav) - var(--hd-mainpad) - 28px)" }}>
       {MEAL_KEYS.map((key) => {
         const plan = mealPlans[key] || { label: "", items: [] };
         const tot = (plan.items || []).reduce((acc, m) => {
@@ -1860,8 +1929,8 @@ function Food({ mealPlans, setMealPlans }) {
           return acc;
         }, { kcal: 0, carbs: 0, protein: 0, fat: 0, fiber: 0 });
         return (
-          <button key={key} onClick={() => setOpenPlan(key)} className="grow"
-            style={{ ...card, padding: "10px 12px", marginBottom: 8, width: "100%", textAlign: "left", cursor: "pointer", display: "block" }}>
+          <button key={key} onClick={() => setOpenPlan(key)} className={isWide ? undefined : "grow"}
+            style={{ ...card, padding: "10px 12px", marginBottom: isWide ? 0 : 8, width: "100%", textAlign: "left", cursor: "pointer", display: "block" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span className="disp" style={{ fontSize: 16, fontWeight: 700, textTransform: "uppercase" }}>{t("meal")} {key}{plan.label ? <span className="mono" style={{ fontSize: 11, color: "#8A8D93", textTransform: "none", fontWeight: 400 }}> · {plan.label}</span> : null}</span>
               <ChevronRight size={16} color="#8A8D93" style={{ flexShrink: 0 }} />
@@ -1893,7 +1962,7 @@ function Food({ mealPlans, setMealPlans }) {
       })}
       </div>
 
-      <div style={{ marginTop: 40 }}>
+      <div style={{ marginTop: isWide ? 18 : 40 }}>
         <SectionLabel>{t("dailyTotal")}</SectionLabel>
         <div style={{ ...card, padding: 14 }}>
           <div style={{ textAlign: "center", marginBottom: 10 }}>
