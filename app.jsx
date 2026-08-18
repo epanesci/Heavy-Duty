@@ -1387,6 +1387,16 @@ function App() {
         /* Buttons don't inherit color by default — without this they render
            with the system's black button text once deployed outside the preview. */
         button { color: inherit; font-family: inherit; }
+        /* Height available to a screen: viewport minus header, nav bar and main padding.
+           dvh follows the mobile browser chrome as it hides/shows. */
+        :root { --hd-header: 54px; --hd-nav: 62px; --hd-pad: 24px; }
+        .fill-screen {
+          display: flex;
+          flex-direction: column;
+          height: calc(100dvh - var(--hd-header) - var(--hd-nav) - var(--hd-pad));
+          min-height: 380px;
+        }
+        .fill-screen > .grow { flex: 1 1 0; min-height: 0; overflow: hidden; }
         ::selection { background: #C81E3A; color: #fff; }
       `}</style>
 
@@ -1481,9 +1491,11 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
   }
 
   return (
-    <div>
+    <div className={historyOpen ? undefined : "fill-screen"}>
       {cycle.map((key) => (
-        <button key={key} onClick={() => setScreen({ mode: "view", key })} style={{ ...card, marginBottom: 10, width: "100%", textAlign: "left", cursor: "pointer" }}>
+        <button key={key} onClick={() => setScreen({ mode: "view", key })}
+          className={historyOpen ? undefined : "grow"}
+          style={{ ...card, marginBottom: 8, width: "100%", textAlign: "left", cursor: "pointer", display: "block" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 7, minWidth: 0 }}>
@@ -1498,13 +1510,16 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
           </div>
           <div style={{ marginTop: 8 }}>
             {getGroups(key, level).map((groupIds, gi) => (
-              <div key={gi} style={{ marginTop: gi > 0 ? 6 : 0, paddingLeft: groupIds.length > 1 ? 8 : 0, borderLeft: groupIds.length > 1 ? "2px solid #C81E3A" : "none" }}>
+              <div key={gi} style={{ marginTop: gi > 0 ? 6 : 0, paddingLeft: 8,
+                                     // Transparent border on non-supersets keeps every row on the
+                                     // same left edge, so the weight column never shifts.
+                                     borderLeft: "2px solid " + (groupIds.length > 1 ? "#C81E3A" : "transparent") }}>
                 {groupIds.map((slotId) => {
                   const slot = routineConfig[key].find((s) => s.slotId === slotId);
                   return (
-                    <div key={slotId} style={{ display: "flex", gap: 10, marginTop: 2, paddingLeft: 8 }}>
-                      <span className="mono" style={{ fontSize: 11, color: "#8A8D93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: 108, flexShrink: 0 }}>{shortName(slot.exercise)}</span>
-                      <span className="mono" style={{ fontSize: 11, color: "#8A8D93" }}><MetaRow slot={slot} /></span>
+                    <div key={slotId} style={{ display: "grid", gridTemplateColumns: "104px 1fr", gap: 10, marginTop: 2 }}>
+                      <span className="mono" style={{ fontSize: 11, color: "#8A8D93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortName(slot.exercise)}</span>
+                      <span className="mono" style={{ fontSize: 11, color: "#8A8D93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><MetaRow slot={slot} /></span>
                     </div>
                   );
                 })}
@@ -1514,7 +1529,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
         </button>
       ))}
 
-      <div style={{ marginTop: 18 }}>
+      <div style={{ marginTop: historyOpen ? 18 : 4, flexShrink: 0 }}>
         <button onClick={() => setHistoryOpen((v) => !v)} style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <SectionLabel>{t("history")}</SectionLabel>
           <ChevronDown size={16} color="#8A8D93" style={{ transform: historyOpen ? "rotate(180deg)" : "none" }} />
@@ -1812,6 +1827,9 @@ function Food({ mealPlans, setMealPlans }) {
 
   return (
     <div>
+      {/* The four meals fill exactly one screen; the daily total sits below the
+          fold on purpose, so it takes a deliberate scroll to reach. */}
+      <div className="fill-screen">
       {MEAL_KEYS.map((key) => {
         const plan = mealPlans[key] || { label: "", items: [] };
         const tot = (plan.items || []).reduce((acc, m) => {
@@ -1823,7 +1841,8 @@ function Food({ mealPlans, setMealPlans }) {
           return acc;
         }, { kcal: 0, carbs: 0, protein: 0, fat: 0, fiber: 0 });
         return (
-          <button key={key} onClick={() => setOpenPlan(key)} style={{ ...card, padding: "10px 12px", marginBottom: 8, width: "100%", textAlign: "left", cursor: "pointer" }}>
+          <button key={key} onClick={() => setOpenPlan(key)} className="grow"
+            style={{ ...card, padding: "10px 12px", marginBottom: 8, width: "100%", textAlign: "left", cursor: "pointer", display: "block" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span className="disp" style={{ fontSize: 16, fontWeight: 700, textTransform: "uppercase" }}>{t("meal")} {key}{plan.label ? <span className="mono" style={{ fontSize: 11, color: "#8A8D93", textTransform: "none", fontWeight: 400 }}> · {plan.label}</span> : null}</span>
               <ChevronRight size={16} color="#8A8D93" style={{ flexShrink: 0 }} />
@@ -1853,8 +1872,9 @@ function Food({ mealPlans, setMealPlans }) {
           </button>
         );
       })}
+      </div>
 
-      <div style={{ marginTop: 10 }}>
+      <div style={{ marginTop: 16 }}>
         <SectionLabel>{t("dailyTotal")}</SectionLabel>
         <div style={{ ...card, padding: 14 }}>
           <div style={{ textAlign: "center", marginBottom: 10 }}>
