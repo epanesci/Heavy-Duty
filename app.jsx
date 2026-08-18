@@ -62,6 +62,20 @@ const STRINGS = {
     importOk: "Data imported.", importFail: "Could not read that file.",
     saveError: "Could not save — storage may be full.",
     resetApp: "Reset app", resetConfirm: "Erase all data and start over?",
+    bodyWeightKg: "BODY WEIGHT (KG)", loading: "Loading...",
+    needTwoMeasurements: "{t("needTwoMeasurements")}",
+    needTwoSessions: "{t("needTwoSessions")}",
+    measurementHistory: "Measurement history", methodPrinciples: "Method principles",
+    noFoodsYet: "{t("noFoodsYet")}", noFoodsLogged: "No foods logged",
+    saveNotes: "{t("saveNotes")}", totalCalories: "Total calories", meals: "Meals",
+    phAmount: "Amount (e.g. 250 gr, or 2)", phFood: "Food (e.g. Oats with egg whites)",
+    phCarbs: "Carbs (g)", phFat: "Fat (g)", phFiber: "Fiber (g)", phProtein: "Protein (g)",
+    phKcal: "Kcal", phLabel: "Label (optional)", phDetails: "Details — optional",
+    phWeightKg: "Weight (kg)", phSeconds: "Seconds", phPositiveReps: "Positive reps",
+    phNegativeReps: "Negative reps (slow)", phExtra: "+ extra", phPlus15s: "+15s",
+    phTargetReps: "Target reps", phTargetNegatives: "Target negatives", phTargetSeconds: "Target seconds",
+    searchFood: "Search food database…", perUnit: "per unit", per100: "per 100 g",
+    orManual: "Not found — type the values below", pickedFrom: "auto-calculated from database",
   },
   es: {
     tagline: "UNA SERIE. AL FALLO. SIN EXCUSAS.",
@@ -96,6 +110,20 @@ const STRINGS = {
     importOk: "Datos importados.", importFail: "No se pudo leer ese archivo.",
     saveError: "No se pudo guardar — puede que no haya espacio.",
     resetApp: "Reiniciar app", resetConfirm: "¿Borrar todos los datos y empezar de cero?",
+    bodyWeightKg: "PESO CORPORAL (KG)", loading: "Cargando...",
+    needTwoMeasurements: "Registrá al menos 2 mediciones para ver la tendencia.",
+    needTwoSessions: "Necesitás al menos 2 sesiones con este ejercicio.",
+    measurementHistory: "Historial de mediciones", methodPrinciples: "Principios del método",
+    noFoodsYet: "Todavía no hay alimentos en esta comida.", noFoodsLogged: "Sin alimentos",
+    saveNotes: "GUARDAR NOTAS", totalCalories: "Calorías totales", meals: "Comidas",
+    phAmount: "Cantidad (ej. 250 gr, o 2)", phFood: "Alimento (ej. Avena con claras)",
+    phCarbs: "Carbos (g)", phFat: "Grasa (g)", phFiber: "Fibra (g)", phProtein: "Proteína (g)",
+    phKcal: "Kcal", phLabel: "Etiqueta (opcional)", phDetails: "Detalles — opcional",
+    phWeightKg: "Peso (kg)", phSeconds: "Segundos", phPositiveReps: "Reps positivas",
+    phNegativeReps: "Reps negativas (lentas)", phExtra: "+ extra", phPlus15s: "+15s",
+    phTargetReps: "Reps objetivo", phTargetNegatives: "Negativas objetivo", phTargetSeconds: "Segundos objetivo",
+    searchFood: "Buscar en la base de alimentos…", perUnit: "por unidad", per100: "por 100 g",
+    orManual: "No encontrado — cargá los valores abajo", pickedFrom: "calculado desde la base",
   },
 };
 
@@ -894,6 +922,182 @@ const PRINCIPLES = [
   "Momentary muscular failure is the signal that tells the body it needs to adapt — not the number of sets.",
 ];
 
+
+// Content translated at display time. Stored data (exercise names, slot ids,
+// day keys) always stays in the canonical English form so saved logs and
+// exported backups remain valid across languages.
+const ES_TEXT = {
+  // day / routine labels
+  "Chest, Biceps & Shoulders": "Pecho, Bíceps y Hombros",
+  "Quads, Lower Back & Grip Hold": "Cuádriceps, Lumbares y Agarre",
+  "Back & Triceps": "Espalda y Tríceps",
+  "Posterior Chain": "Cadena Posterior",
+  "Chest & Back": "Pecho y Espalda",
+  "Delts & Arms": "Deltoides y Brazos",
+  "Legs": "Piernas",
+  "Legs — Advanced Emphasis": "Piernas — Énfasis Avanzado",
+  "Deadlift & Chest": "Peso Muerto y Pecho",
+  // slot names
+  "Chest": "Pecho", "Chest — Pre-Exhaust": "Pecho — Preagotamiento",
+  "Chest — Compound": "Pecho — Compuesto", "Biceps": "Bíceps",
+  "Shoulders — Lateral": "Hombros — Lateral", "Shoulders — Rear": "Hombros — Posterior",
+  "Quads": "Cuádriceps", "Quads — Pre-Exhaust": "Cuádriceps — Preagotamiento",
+  "Quads — Static Hold": "Cuádriceps — Isométrico", "Lower Back": "Lumbares",
+  "Grip Hold": "Agarre", "Back — Pre-Exhaust": "Espalda — Preagotamiento",
+  "Back — Compound": "Espalda — Compuesto", "Triceps — Pre-Exhaust": "Tríceps — Preagotamiento",
+  "Triceps — Compound": "Tríceps — Compuesto", "Calves": "Gemelos",
+  "Legs — Compound": "Piernas — Compuesto",
+  // protocol labels + descriptions
+  "Positive failure only": "Solo al fallo positivo",
+  "Rest-pause": "Rest-pause",
+  "Negatives": "Negativas",
+  "Sub-maximal (not to failure)": "Sub-máximo (sin llegar al fallo)",
+  "One set taken to positive muscular failure. No forced or negative reps.":
+    "Una serie llevada al fallo muscular positivo. Sin reps forzadas ni negativas.",
+  "Set to failure, rest 15s, extra reps, rest 15s, extra reps":
+    "Serie al fallo, 15s de descanso, reps extra, 15s, reps extra",
+  "Positive failure → forced rep → static hold → slow negative":
+    "Fallo positivo → rep forzada → isométrico → negativa lenta",
+  "Fixed target reps, stopping short of failure — safety priority on high-risk lifts.":
+    "Reps fijas sin llegar al fallo — prioridad a la seguridad en ejercicios de riesgo.",
+};
+function tx(text) {
+  return CURRENT_LANG === "es" && ES_TEXT[text] ? ES_TEXT[text] : text;
+}
+
+const BOOKS_ES = [
+  { title: "High-Intensity Training the Mike Mentzer Way", author: "Mike Mentzer, John Little", note: "El texto de referencia del método: volumen mínimo, intensidad máxima, recuperación completa." },
+  { title: "The Wisdom of Mike Mentzer", author: "Mike Mentzer, John Little", note: "Recopilación de artículos sobre la lógica fisiológica detrás de entrenar al fallo." },
+  { title: "Body by Science", author: "Doug McGuff, John Little", note: "La base científica del entrenamiento breve e infrecuente, con protocolos prácticos." },
+];
+
+const PRINCIPLES_ES = [
+  "Una sola serie llevada al fallo muscular real estimula tanto crecimiento como varias series — el volumen extra solo suma fatiga sin beneficio adicional.",
+  "El músculo crece durante el descanso, no durante el entrenamiento. Sin recuperación completa entre sesiones, no hay adaptación.",
+  "Intensidad y volumen son inversamente proporcionales: cuanto más intenso el estímulo, menos cantidad se necesita.",
+  "El fallo muscular momentáneo es la señal que le avisa al cuerpo que necesita adaptarse — no la cantidad de series.",
+];
+function books() { return CURRENT_LANG === "es" ? BOOKS_ES : BOOKS; }
+function principles() { return CURRENT_LANG === "es" ? PRINCIPLES_ES : PRINCIPLES; }
+
+// ---------------- FOOD DATABASE ----------------
+// Values per 100 g (or per unit where u:"u"), from standard composition tables
+// (USDA / BEDCA averages). Raw/uncooked unless stated. k=kcal c=carbs p=protein
+// f=fat fb=fiber. es = Spanish name used for search and display.
+const FOOD_DB = [
+  // --- Meat & poultry ---
+  { n: "Beef, lean", es: "Carne vacuna magra", k: 187, c: 0, p: 21, f: 11, fb: 0 },
+  { n: "Beef mince 20%", es: "Carne picada 20%", k: 254, c: 0, p: 17, f: 20, fb: 0 },
+  { n: "Chicken breast", es: "Pechuga de pollo", k: 120, c: 0, p: 23, f: 2.6, fb: 0 },
+  { n: "Chicken thigh", es: "Muslo de pollo", k: 177, c: 0, p: 19, f: 11, fb: 0 },
+  { n: "Pork loin", es: "Lomo de cerdo", k: 143, c: 0, p: 21, f: 6, fb: 0 },
+  { n: "Ham", es: "Jamón cocido", k: 145, c: 1.5, p: 18, f: 7, fb: 0 },
+  { n: "Turkey breast", es: "Pechuga de pavo", k: 111, c: 0, p: 24, f: 1.5, fb: 0 },
+  { n: "Liver, beef", es: "Hígado vacuno", k: 135, c: 3.9, p: 20, f: 3.6, fb: 0 },
+  // --- Fish & seafood ---
+  { n: "Salmon", es: "Salmón", k: 208, c: 0, p: 20, f: 13, fb: 0 },
+  { n: "Tuna, canned in water", es: "Atún al agua", k: 116, c: 0, p: 26, f: 1, fb: 0 },
+  { n: "Hake", es: "Merluza", k: 86, c: 0, p: 17, f: 1.8, fb: 0 },
+  { n: "Sardines, canned", es: "Sardinas en lata", k: 208, c: 0, p: 25, f: 11, fb: 0 },
+  { n: "Shrimp", es: "Camarón", k: 99, c: 0.2, p: 24, f: 0.3, fb: 0 },
+  // --- Eggs & dairy ---
+  { n: "Egg", es: "Huevo", k: 72, c: 0.4, p: 6.3, f: 4.8, fb: 0, u: "u" },
+  { n: "Egg white", es: "Clara de huevo", k: 17, c: 0.2, p: 3.6, f: 0.1, fb: 0, u: "u" },
+  { n: "Whole milk", es: "Leche entera", k: 61, c: 4.8, p: 3.2, f: 3.3, fb: 0 },
+  { n: "Skim milk", es: "Leche descremada", k: 34, c: 5, p: 3.4, f: 0.1, fb: 0 },
+  { n: "Greek yogurt", es: "Yogur griego", k: 59, c: 3.6, p: 10, f: 0.4, fb: 0 },
+  { n: "Skyr", es: "Skyr", k: 63, c: 4, p: 11, f: 0.2, fb: 0 },
+  { n: "Cottage cheese", es: "Queso cottage", k: 98, c: 3.4, p: 11, f: 4.3, fb: 0 },
+  { n: "Cheese, hard", es: "Queso duro", k: 402, c: 1.3, p: 25, f: 33, fb: 0 },
+  { n: "Mozzarella", es: "Muzzarella", k: 280, c: 3.1, p: 22, f: 20, fb: 0 },
+  { n: "Butter", es: "Manteca", k: 717, c: 0.1, p: 0.9, f: 81, fb: 0 },
+  { n: "Whey protein powder", es: "Proteína whey", k: 375, c: 8, p: 78, f: 4, fb: 0 },
+  // --- Grains & starches ---
+  { n: "White rice, raw", es: "Arroz blanco crudo", k: 365, c: 80, p: 7, f: 0.7, fb: 1.3 },
+  { n: "Brown rice, raw", es: "Arroz integral crudo", k: 370, c: 77, p: 7.9, f: 2.9, fb: 3.5 },
+  { n: "Pasta, raw", es: "Fideos crudos", k: 371, c: 75, p: 13, f: 1.5, fb: 3.2 },
+  { n: "Oats", es: "Avena", k: 389, c: 66, p: 17, f: 7, fb: 11 },
+  { n: "Bread, white", es: "Pan blanco", k: 265, c: 49, p: 9, f: 3.2, fb: 2.7 },
+  { n: "Bread, wholemeal", es: "Pan integral", k: 247, c: 41, p: 13, f: 3.4, fb: 7 },
+  { n: "Corn flakes", es: "Copos de maíz", k: 357, c: 84, p: 7.5, f: 0.4, fb: 3 },
+  { n: "Wheat flour", es: "Harina de trigo", k: 364, c: 76, p: 10, f: 1, fb: 2.7 },
+  { n: "Potato", es: "Papa", k: 77, c: 17, p: 2, f: 0.1, fb: 2.2 },
+  { n: "Sweet potato", es: "Batata", k: 86, c: 20, p: 1.6, f: 0.1, fb: 3 },
+  { n: "Quinoa, raw", es: "Quinoa cruda", k: 368, c: 64, p: 14, f: 6, fb: 7 },
+  { n: "Polenta / cornmeal", es: "Polenta", k: 362, c: 79, p: 8.1, f: 1.2, fb: 7 },
+  // --- Legumes ---
+  { n: "Lentils, raw", es: "Lentejas crudas", k: 353, c: 60, p: 26, f: 1.1, fb: 11 },
+  { n: "Chickpeas, raw", es: "Garbanzos crudos", k: 364, c: 61, p: 19, f: 6, fb: 17 },
+  { n: "Black beans, raw", es: "Porotos negros crudos", k: 341, c: 62, p: 21, f: 1.4, fb: 15 },
+  { n: "Peas", es: "Arvejas", k: 81, c: 14, p: 5.4, f: 0.4, fb: 5 },
+  { n: "Soy, textured", es: "Soja texturizada", k: 336, c: 34, p: 50, f: 1.5, fb: 18 },
+  // --- Nuts, seeds & fats ---
+  { n: "Peanuts", es: "Maní", k: 567, c: 16, p: 26, f: 49, fb: 8.5 },
+  { n: "Peanut butter", es: "Manteca de maní", k: 588, c: 20, p: 25, f: 50, fb: 6 },
+  { n: "Almonds", es: "Almendras", k: 579, c: 22, p: 21, f: 50, fb: 12.5 },
+  { n: "Walnuts", es: "Nueces", k: 654, c: 14, p: 15, f: 65, fb: 6.7 },
+  { n: "Cashews", es: "Castañas de cajú", k: 553, c: 30, p: 18, f: 44, fb: 3.3 },
+  { n: "Chia seeds", es: "Semillas de chía", k: 486, c: 42, p: 17, f: 31, fb: 34 },
+  { n: "Olive oil", es: "Aceite de oliva", k: 884, c: 0, p: 0, f: 100, fb: 0 },
+  { n: "Sunflower oil", es: "Aceite de girasol", k: 884, c: 0, p: 0, f: 100, fb: 0 },
+  { n: "Avocado", es: "Palta", k: 160, c: 8.5, p: 2, f: 15, fb: 6.7 },
+  // --- Fruits ---
+  { n: "Banana", es: "Banana", k: 89, c: 23, p: 1.1, f: 0.3, fb: 2.6 },
+  { n: "Apple", es: "Manzana", k: 52, c: 14, p: 0.3, f: 0.2, fb: 2.4 },
+  { n: "Orange", es: "Naranja", k: 47, c: 12, p: 0.9, f: 0.1, fb: 2.4 },
+  { n: "Strawberries", es: "Frutillas", k: 32, c: 7.7, p: 0.7, f: 0.3, fb: 2 },
+  { n: "Blueberries", es: "Arándanos", k: 57, c: 14, p: 0.7, f: 0.3, fb: 2.4 },
+  { n: "Grapes", es: "Uvas", k: 69, c: 18, p: 0.7, f: 0.2, fb: 0.9 },
+  { n: "Pear", es: "Pera", k: 57, c: 15, p: 0.4, f: 0.1, fb: 3.1 },
+  { n: "Watermelon", es: "Sandía", k: 30, c: 7.6, p: 0.6, f: 0.2, fb: 0.4 },
+  { n: "Raisins", es: "Pasas de uva", k: 299, c: 79, p: 3.1, f: 0.5, fb: 3.7 },
+  { n: "Dates", es: "Dátiles", k: 282, c: 75, p: 2.5, f: 0.4, fb: 8 },
+  // --- Vegetables ---
+  { n: "Tomato", es: "Tomate", k: 18, c: 3.9, p: 0.9, f: 0.2, fb: 1.2 },
+  { n: "Lettuce", es: "Lechuga", k: 15, c: 2.9, p: 1.4, f: 0.2, fb: 1.3 },
+  { n: "Onion", es: "Cebolla", k: 40, c: 9.3, p: 1.1, f: 0.1, fb: 1.7 },
+  { n: "Carrot", es: "Zanahoria", k: 41, c: 9.6, p: 0.9, f: 0.2, fb: 2.8 },
+  { n: "Broccoli", es: "Brócoli", k: 34, c: 7, p: 2.8, f: 0.4, fb: 2.6 },
+  { n: "Spinach", es: "Espinaca", k: 23, c: 3.6, p: 2.9, f: 0.4, fb: 2.2 },
+  { n: "Zucchini", es: "Zapallito", k: 17, c: 3.1, p: 1.2, f: 0.3, fb: 1 },
+  { n: "Pumpkin", es: "Zapallo", k: 26, c: 6.5, p: 1, f: 0.1, fb: 0.5 },
+  { n: "Bell pepper", es: "Morrón", k: 31, c: 6, p: 1, f: 0.3, fb: 2.1 },
+  { n: "Cucumber", es: "Pepino", k: 15, c: 3.6, p: 0.7, f: 0.1, fb: 0.5 },
+  { n: "Mushrooms", es: "Champiñones", k: 22, c: 3.3, p: 3.1, f: 0.3, fb: 1 },
+  { n: "Green beans", es: "Chauchas", k: 31, c: 7, p: 1.8, f: 0.1, fb: 3.4 },
+  { n: "Mixed vegetables", es: "Verduras mixtas", k: 25, c: 5, p: 1.3, f: 0.2, fb: 2 },
+  // --- Other ---
+  { n: "Honey", es: "Miel", k: 304, c: 82, p: 0.3, f: 0, fb: 0.2 },
+  { n: "Sugar", es: "Azúcar", k: 387, c: 100, p: 0, f: 0, fb: 0 },
+  { n: "Dark chocolate 70%", es: "Chocolate amargo 70%", k: 598, c: 46, p: 7.8, f: 43, fb: 11 },
+  { n: "Protein bar", es: "Barra proteica", k: 350, c: 40, p: 25, f: 10, fb: 3, u: "u" },
+];
+
+function foodLabel(f) {
+  return CURRENT_LANG === "es" ? f.es : f.n;
+}
+
+function searchFoods(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const hit = (f) => (f.n + " " + f.es).toLowerCase().includes(q);
+  const starts = (f) => foodLabel(f).toLowerCase().startsWith(q);
+  return FOOD_DB.filter(hit)
+    .sort((a, b) => (starts(b) ? 1 : 0) - (starts(a) ? 1 : 0))
+    .slice(0, 8);
+}
+
+// Scale a database entry (per 100 g, or per unit) to the requested amount.
+function scaleFood(f, qty) {
+  const n = Number(qty) || 0;
+  const factor = f.u === "u" ? n : n / 100;
+  const r1 = (v) => Math.round(v * factor * 10) / 10;
+  return {
+    calories: Math.round(f.k * factor),
+    carbs: r1(f.c), protein: r1(f.p), fat: r1(f.f), fiber: r1(f.fb),
+  };
+}
+
 const STORAGE_KEYS = {
   settings: "hd:settings5",
   workouts: "hd:workouts15",
@@ -1139,10 +1343,13 @@ function App() {
         .mono { font-family: 'JetBrains Mono', monospace; }
         * { box-sizing: border-box; }
         input, select, textarea { font-family: inherit; }
+        /* Buttons don't inherit color by default — without this they render
+           with the system's black button text once deployed outside the preview. */
+        button { color: inherit; font-family: inherit; }
         ::selection { background: #C81E3A; color: #fff; }
       `}</style>
 
-      <header style={{ padding: "22px 20px 16px", borderBottom: "1px solid #2A2D33" }}>
+      <header style={{ padding: "14px 16px 12px", borderBottom: "1px solid #2A2D33" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 6, height: 26, background: "#C81E3A" }} />
           <h1 className="disp" style={{ fontSize: 22, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", margin: 0, flex: 1 }}>Heavy Duty</h1>
@@ -1153,12 +1360,11 @@ function App() {
             </button>
           )}
         </div>
-        <p className="mono" style={{ fontSize: 11, color: "#8A8D93", margin: "6px 0 0 16px", letterSpacing: 0.5 }}>{t("tagline")}</p>
       </header>
 
-      <main style={{ padding: "18px 12px 100px", maxWidth: 560, margin: "0 auto" }}>
+      <main style={{ padding: "12px 12px 92px", maxWidth: 560, margin: "0 auto" }}>
         {!ready ? (
-          <div style={{ textAlign: "center", padding: 60, color: "#8A8D93" }} className="mono">Loading...</div>
+          <div style={{ textAlign: "center", padding: 60, color: "#8A8D93" }} className="mono">{t("loading")}</div>
         ) : !settings.lang ? (
           <LanguagePicker onPick={pickLang} />
         ) : !settings.onboarded ? (
@@ -1235,7 +1441,6 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
 
   return (
     <div>
-      <SectionLabel>{t("days")}</SectionLabel>
       {cycle.map((key) => (
         <button key={key} onClick={() => setScreen({ mode: "view", key })} style={{ ...card, marginBottom: 10, width: "100%", textAlign: "left", cursor: "pointer" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1246,7 +1451,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
                   <span className="mono" style={{ fontSize: 10, color: "#C81E3A", border: "1px solid #C81E3A", padding: "2px 6px", letterSpacing: 0.5 }}>{t("suggested")}</span>
                 )}
               </div>
-              <div className="disp" style={{ fontSize: 13, fontWeight: 700, color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.6, marginTop: 3 }}>{routines[key].label}</div>
+              <div className="disp" style={{ fontSize: 13, fontWeight: 700, color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.6, marginTop: 3 }}>{tx(routines[key].label)}</div>
             </div>
             <ChevronRight size={18} color="#8A8D93" style={{ flexShrink: 0 }} />
           </div>
@@ -1347,7 +1552,7 @@ function RoutineView({ routineKey, config, workouts, level, onBack, onEdit, onLo
                 <div className="disp" style={{ fontSize: 15 }}>{slot.exercise}</div>
                 <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginTop: 2 }}>{slotDef?.name}{slot.note ? ` · ${slot.note}` : ""}</div>
                 <div style={{ marginTop: 8 }}>
-                  <span className="mono" style={{ fontSize: 11, color: "#C81E3A" }}>{slot.timeBased ? t("holdToFailure") : PROTOCOLS[slot.protocol].label}</span>
+                  <span className="mono" style={{ fontSize: 11, color: "#C81E3A" }}>{slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)}</span>
                   <div className="mono" style={{ fontSize: 12, color: "#E8E6E1", marginTop: 4 }}>{t("target")}: <MetaRow slot={slot} /></div>
                   <PrevRecordLine workouts={workouts} routineKey={routineKey} slotId={slotId} />
                 </div>
@@ -1393,7 +1598,7 @@ function RoutineEdit({ routineKey, config, level, onCancel, onSave }) {
             const i = idxOf(slotId);
             return (
               <div key={slotId} style={{ paddingTop: si > 0 ? 12 : 0, marginTop: si > 0 ? 12 : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none" }}>
-                <div className="disp" style={{ fontSize: 14, textTransform: "uppercase", marginBottom: 8 }}>{slotDef.name}</div>
+                <div className="disp" style={{ fontSize: 14, textTransform: "uppercase", marginBottom: 8 }}>{tx(slotDef.name)}</div>
                 <select value={slots[i].exercise} onChange={(e) => update(i, "exercise", e.target.value)} style={{ ...input, marginBottom: 8 }}>
                   {slotDef.options.map((o) => <option key={o} value={o}>{o}</option>)}
                 </select>
@@ -1402,34 +1607,34 @@ function RoutineEdit({ routineKey, config, level, onCancel, onSave }) {
 
                 {slotDef.isTimeBased ? (
                   <>
-                    <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginBottom: 8 }}>Hold to failure</div>
-                    <input type="number" placeholder="Target seconds" value={slots[i].targetSeconds} onChange={(e) => update(i, "targetSeconds", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, marginBottom: 8 }} />
+                    <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginBottom: 8 }}>{t("holdToFailure")}</div>
+                    <input type="number" placeholder={t("phTargetSeconds")} value={slots[i].targetSeconds} onChange={(e) => update(i, "targetSeconds", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, marginBottom: 8 }} />
                   </>
                 ) : slotDef.isPreagotamiento ? (
                   <>
-                    <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginBottom: 8 }}>{PROTOCOLS.fallo.desc}</div>
-                    <input type="number" placeholder="Target reps" value={slots[i].targetReps} onChange={(e) => update(i, "targetReps", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, marginBottom: 8 }} />
+                    <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginBottom: 8 }}>{tx(PROTOCOLS.fallo.desc)}</div>
+                    <input type="number" placeholder={t("phTargetReps")} value={slots[i].targetReps} onChange={(e) => update(i, "targetReps", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, marginBottom: 8 }} />
                   </>
                 ) : (
                   <>
                     <select value={slots[i].protocol} onChange={(e) => update(i, "protocol", e.target.value)} style={{ ...input, marginBottom: 8 }}>
-                      <option value="rest_pause">Rest-pause</option>
-                      <option value="negativas">Negatives</option>
-                      <option value="submax">Sub-maximal (not to failure)</option>
+                      <option value="rest_pause">{tx("Rest-pause")}</option>
+                      <option value="negativas">{tx("Negatives")}</option>
+                      <option value="submax">{tx("Sub-maximal (not to failure)")}</option>
                     </select>
 
                     {slots[i].protocol === "rest_pause" ? (
                       <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                        <input type="number" placeholder="Target reps" value={slots[i].targetReps} onChange={(e) => update(i, "targetReps", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, flex: 1 }} />
-                        <input type="number" placeholder="+ extra" value={slots[i].targetExtra1} onChange={(e) => update(i, "targetExtra1", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, flex: 1 }} />
-                        <input type="number" placeholder="+ extra" value={slots[i].targetExtra2} onChange={(e) => update(i, "targetExtra2", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, flex: 1 }} />
+                        <input type="number" placeholder={t("phTargetReps")} value={slots[i].targetReps} onChange={(e) => update(i, "targetReps", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, flex: 1 }} />
+                        <input type="number" placeholder={t("phExtra")} value={slots[i].targetExtra1} onChange={(e) => update(i, "targetExtra1", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, flex: 1 }} />
+                        <input type="number" placeholder={t("phExtra")} value={slots[i].targetExtra2} onChange={(e) => update(i, "targetExtra2", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, flex: 1 }} />
                       </div>
                     ) : slots[i].protocol === "submax" ? (
-                      <input type="number" placeholder="Target reps" value={slots[i].targetReps} onChange={(e) => update(i, "targetReps", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, marginBottom: 8 }} />
+                      <input type="number" placeholder={t("phTargetReps")} value={slots[i].targetReps} onChange={(e) => update(i, "targetReps", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, marginBottom: 8 }} />
                     ) : (
                       <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                        <input type="number" placeholder="Target reps" value={slots[i].targetReps} onChange={(e) => update(i, "targetReps", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, flex: 1 }} />
-                        <input type="number" placeholder="Target negatives" value={slots[i].targetNegatives} onChange={(e) => update(i, "targetNegatives", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, flex: 1 }} />
+                        <input type="number" placeholder={t("phTargetReps")} value={slots[i].targetReps} onChange={(e) => update(i, "targetReps", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, flex: 1 }} />
+                        <input type="number" placeholder={t("phTargetNegatives")} value={slots[i].targetNegatives} onChange={(e) => update(i, "targetNegatives", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, flex: 1 }} />
                       </div>
                     )}
                   </>
@@ -1487,7 +1692,7 @@ function LogSession({ routineKey, config, workouts, level, onCancel, onFinish })
         <button onClick={onCancel} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={20} /></button>
         <div>
           <span className="disp" style={{ fontSize: 18, textTransform: "uppercase" }}>Day {routineKey}</span>
-          <div className="disp" style={{ fontSize: 13, fontWeight: 700, color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.6, marginTop: 1 }}>{base.label}</div>
+          <div className="disp" style={{ fontSize: 13, fontWeight: 700, color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.6, marginTop: 1 }}>{tx(base.label)}</div>
         </div>
       </div>
 
@@ -1503,7 +1708,7 @@ function LogSession({ routineKey, config, workouts, level, onCancel, onFinish })
               <div key={slotId} style={{ paddingTop: si > 0 ? 12 : 0, marginTop: si > 0 ? 12 : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none" }}>
                 <div className="disp" style={{ fontSize: 14, marginBottom: 2 }}>{slot.exercise}</div>
                 <div className="mono" style={{ fontSize: 11, color: "#C81E3A", marginBottom: 4 }}>
-                  {slot.timeBased ? t("holdToFailure") : PROTOCOLS[slot.protocol].label} · target <MetaRow slot={slot} />{slot.note ? ` · ${slot.note}` : ""}
+                  {slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)} · target <MetaRow slot={slot} />{slot.note ? ` · ${slot.note}` : ""}
                 </div>
                 <PrevRecordLine workouts={workouts} routineKey={routineKey} slotId={slotId} />
                 <div style={{ marginTop: 8 }} />
@@ -1511,18 +1716,18 @@ function LogSession({ routineKey, config, workouts, level, onCancel, onFinish })
                 <input type="number" placeholder={`Weight (${slot.weightUnit || "kg"})`} value={entries[i].weight} onChange={(e) => update(i, "weight", e.target.value)} style={{ ...input, marginBottom: 8 }} />
 
                 {slot.timeBased ? (
-                  <input type="number" placeholder="Seconds" value={entries[i].seconds} onChange={(e) => update(i, "seconds", e.target.value)} style={input} />
+                  <input type="number" placeholder={t("phSeconds")} value={entries[i].seconds} onChange={(e) => update(i, "seconds", e.target.value)} style={input} />
                 ) : slot.protocol === "rest_pause" ? (
                   <div style={{ display: "flex", gap: 8 }}>
-                    <input type="number" placeholder="Positive reps" value={entries[i].repsBreakdown[0]} onChange={(e) => updateBreakdown(i, 0, e.target.value)} style={{ ...input, flex: 1 }} />
+                    <input type="number" placeholder={t("phPositiveReps")} value={entries[i].repsBreakdown[0]} onChange={(e) => updateBreakdown(i, 0, e.target.value)} style={{ ...input, flex: 1 }} />
                     <input type="number" placeholder="+15s" value={entries[i].repsBreakdown[1]} onChange={(e) => updateBreakdown(i, 1, e.target.value)} style={{ ...input, flex: 1 }} />
                     <input type="number" placeholder="+15s" value={entries[i].repsBreakdown[2]} onChange={(e) => updateBreakdown(i, 2, e.target.value)} style={{ ...input, flex: 1 }} />
                   </div>
                 ) : (
                   <div>
-                    <input type="number" placeholder="Positive reps" value={entries[i].reps} onChange={(e) => update(i, "reps", e.target.value)} style={{ ...input, marginBottom: slot.protocol === "negativas" ? 8 : 0 }} />
+                    <input type="number" placeholder={t("phPositiveReps")} value={entries[i].reps} onChange={(e) => update(i, "reps", e.target.value)} style={{ ...input, marginBottom: slot.protocol === "negativas" ? 8 : 0 }} />
                     {slot.protocol === "negativas" && (
-                      <input type="number" placeholder="Negative reps (slow)" value={entries[i].negatives} onChange={(e) => update(i, "negatives", e.target.value)} style={input} />
+                      <input type="number" placeholder={t("phNegativeReps")} value={entries[i].negatives} onChange={(e) => update(i, "negatives", e.target.value)} style={input} />
                     )}
                   </div>
                 )}
@@ -1566,7 +1771,6 @@ function Food({ mealPlans, setMealPlans }) {
 
   return (
     <div>
-      <SectionLabel>Meals</SectionLabel>
       {MEAL_KEYS.map((key) => {
         const plan = mealPlans[key];
         const t = plan.items.reduce((acc, m) => {
@@ -1578,15 +1782,15 @@ function Food({ mealPlans, setMealPlans }) {
           return acc;
         }, { kcal: 0, carbs: 0, protein: 0, fat: 0, fiber: 0 });
         return (
-          <button key={key} onClick={() => setOpenPlan(key)} style={{ ...card, marginBottom: 10, width: "100%", textAlign: "left", cursor: "pointer" }}>
+          <button key={key} onClick={() => setOpenPlan(key)} style={{ ...card, padding: "10px 12px", marginBottom: 8, width: "100%", textAlign: "left", cursor: "pointer" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span className="disp" style={{ fontSize: 16, fontWeight: 700, textTransform: "uppercase" }}>Meal {key}{plan.label ? <span className="mono" style={{ fontSize: 11, color: "#8A8D93", textTransform: "none", fontWeight: 400 }}> · {plan.label}</span> : null}</span>
               <ChevronRight size={16} color="#8A8D93" style={{ flexShrink: 0 }} />
             </div>
             {plan.items.length === 0 ? (
-              <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginTop: 6 }}>No foods logged</div>
+              <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginTop: 6 }}>{t("noFoodsLogged")}</div>
             ) : (
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: 8, gap: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: 5, gap: 10 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {plan.items.map((it) => (
                     <div key={it.id} className="mono" style={{ fontSize: 11, color: "#8A8D93", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -1609,10 +1813,10 @@ function Food({ mealPlans, setMealPlans }) {
         );
       })}
 
-      <div style={{ marginTop: 18 }}>
+      <div style={{ marginTop: 10 }}>
         <SectionLabel>{t("dailyTotal")}</SectionLabel>
-        <div style={{ ...card, padding: 18 }}>
-          <div style={{ textAlign: "center", marginBottom: 14 }}>
+        <div style={{ ...card, padding: 14 }}>
+          <div style={{ textAlign: "center", marginBottom: 10 }}>
             <div className="mono" style={{ fontSize: 30, fontWeight: 600, color: "#C81E3A" }}>{Math.round(dayTotals.kcal)}</div>
             <div className="disp" style={{ fontSize: 11, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1 }}>{t("totalKcal")}</div>
           </div>
@@ -1660,6 +1864,34 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, onBack }) {
   const [qtyValue, setQtyValue] = useState("");
   const [qtySuffix, setQtySuffix] = useState("");
   const [qtyOriginal, setQtyOriginal] = useState("");
+  const [dbQuery, setDbQuery] = useState("");
+  const [dbPick, setDbPick] = useState(null);
+
+  // Selecting a database food fills the macro fields; changing the amount
+  // afterwards recalculates them, until the user edits a field by hand.
+  const applyFood = (f, qty) => {
+    const v = scaleFood(f, qty);
+    setCalories(String(v.calories));
+    setCarbs(String(v.carbs));
+    setProtein(String(v.protein));
+    setFat(String(v.fat));
+    setFiber(String(v.fiber));
+  };
+  const pickFood = (f) => {
+    const defQty = f.u === "u" ? "1" : "100";
+    setDbPick(f);
+    setDbQuery("");
+    setName(foodLabel(f));
+    setAmount(f.u === "u" ? defQty : defQty + " g");
+    applyFood(f, defQty);
+  };
+  const onAmountChange = (val) => {
+    setAmount(val);
+    if (dbPick) {
+      const num = parseFloat(String(val).replace(",", "."));
+      if (!isNaN(num)) applyFood(dbPick, num);
+    }
+  };
   const total = plan.items.reduce((s, m) => s + (Number(m.calories) || 0), 0);
 
   const splitAmount = (a) => {
@@ -1709,6 +1941,8 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, onBack }) {
 
   const startEdit = (m) => {
     setEditingId(m.id);
+    setDbPick(null);
+    setDbQuery("");
     setName(m.name);
     setAmount(m.amount || "");
     setCalories(m.calories ? String(m.calories) : "");
@@ -1718,7 +1952,7 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, onBack }) {
     setFiber(m.fiber ? String(m.fiber) : "");
     setNotes(m.notes || "");
   };
-  const cancelEdit = () => { setEditingId(null); setName(""); setAmount(""); setCalories(""); setCarbs(""); setProtein(""); setFat(""); setFiber(""); setNotes(""); };
+  const cancelEdit = () => { setEditingId(null); setDbPick(null); setDbQuery(""); setName(""); setAmount(""); setCalories(""); setCarbs(""); setProtein(""); setFat(""); setFiber(""); setNotes(""); };
 
   const saveItem = async () => {
     if (!name.trim()) return;
@@ -1755,7 +1989,7 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, onBack }) {
 
       {mode === "edit" ? (
         <div style={{ ...card, marginBottom: 12 }}>
-          <input placeholder="Label (optional)" value={label} onChange={(e) => setLabel(e.target.value)} onBlur={saveLabel} style={input} />
+          <input placeholder={t("phLabel")} value={label} onChange={(e) => setLabel(e.target.value)} onBlur={saveLabel} style={input} />
         </div>
       ) : plan.label ? (
         <div className="disp" style={{ fontSize: 15, color: "#8A8D93", marginBottom: 12 }}>{plan.label}</div>
@@ -1763,23 +1997,51 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, onBack }) {
 
       <div style={{ ...card, textAlign: "center", padding: 18, marginBottom: 16 }}>
         <div className="mono" style={{ fontSize: 26, fontWeight: 600, color: "#C81E3A" }}>{total}</div>
-        <div className="disp" style={{ fontSize: 11, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1 }}>Total calories</div>
+        <div className="disp" style={{ fontSize: 11, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1 }}>{t("totalCalories")}</div>
       </div>
 
       {mode === "edit" && (
         <div style={card}>
-          <input placeholder="Food (e.g. Oats with egg whites)" value={name} onChange={(e) => setName(e.target.value)} style={{ ...input, marginBottom: 8 }} />
-          <input placeholder="Amount (e.g. 250 gr, or 2)" value={amount} onChange={(e) => setAmount(e.target.value)} style={{ ...input, marginBottom: 8 }} />
-          <input type="number" placeholder="Kcal" value={calories} onChange={(e) => setCalories(e.target.value)} style={{ ...input, marginBottom: 8 }} />
+          <div style={{ position: "relative", marginBottom: 8 }}>
+            <input
+              placeholder={t("searchFood")}
+              value={dbQuery}
+              onChange={(e) => setDbQuery(e.target.value)}
+              style={{ ...input, borderColor: "#C81E3A" }}
+            />
+            {dbQuery.trim() !== "" && (
+              <div style={{ position: "absolute", left: 0, right: 0, top: "100%", zIndex: 20,
+                            background: "#1E2126", border: "1px solid #C81E3A", maxHeight: 220, overflowY: "auto" }}>
+                {searchFoods(dbQuery).length === 0 ? (
+                  <div className="mono" style={{ fontSize: 11, color: "#8A8D93", padding: "10px 12px" }}>{t("orManual")}</div>
+                ) : searchFoods(dbQuery).map((f) => (
+                  <button key={f.n} onClick={() => pickFood(f)}
+                    style={{ display: "block", width: "100%", textAlign: "left", background: "none",
+                             border: "none", borderBottom: "1px solid #2A2D33", padding: "9px 12px", cursor: "pointer" }}>
+                    <div className="disp" style={{ fontSize: 13 }}>{foodLabel(f)}</div>
+                    <div className="mono" style={{ fontSize: 10, color: "#8A8D93", marginTop: 2 }}>
+                      {f.k} kcal · C {f.c} · P {f.p} · F {f.f} — {f.u === "u" ? t("perUnit") : t("per100")}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <input placeholder={t("phFood")} value={name} onChange={(e) => { setName(e.target.value); setDbPick(null); }} style={{ ...input, marginBottom: 8 }} />
+          <input placeholder={t("phAmount")} value={amount} onChange={(e) => onAmountChange(e.target.value)} style={{ ...input, marginBottom: 8 }} />
+          {dbPick && (
+            <div className="mono" style={{ fontSize: 10, color: "#C81E3A", marginBottom: 8 }}>{t("pickedFrom")}</div>
+          )}
+          <input type="number" placeholder={t("phKcal")} value={calories} onChange={(e) => setCalories(e.target.value)} style={{ ...input, marginBottom: 8 }} />
           <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-            <input type="number" placeholder="Carbs (g)" value={carbs} onChange={(e) => setCarbs(e.target.value)} style={{ ...input, flex: 1 }} />
-            <input type="number" placeholder="Protein (g)" value={protein} onChange={(e) => setProtein(e.target.value)} style={{ ...input, flex: 1 }} />
+            <input type="number" placeholder={t("phCarbs")} value={carbs} onChange={(e) => setCarbs(e.target.value)} style={{ ...input, flex: 1 }} />
+            <input type="number" placeholder={t("phProtein")} value={protein} onChange={(e) => setProtein(e.target.value)} style={{ ...input, flex: 1 }} />
           </div>
           <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-            <input type="number" placeholder="Fat (g)" value={fat} onChange={(e) => setFat(e.target.value)} style={{ ...input, flex: 1 }} />
-            <input type="number" placeholder="Fiber (g)" value={fiber} onChange={(e) => setFiber(e.target.value)} style={{ ...input, flex: 1 }} />
+            <input type="number" placeholder={t("phFat")} value={fat} onChange={(e) => setFat(e.target.value)} style={{ ...input, flex: 1 }} />
+            <input type="number" placeholder={t("phFiber")} value={fiber} onChange={(e) => setFiber(e.target.value)} style={{ ...input, flex: 1 }} />
           </div>
-          <textarea placeholder="Details — optional" value={notes} onChange={(e) => setNotes(e.target.value)} style={{ ...input, minHeight: 60, resize: "vertical" }} />
+          <textarea placeholder={t("phDetails")} value={notes} onChange={(e) => setNotes(e.target.value)} style={{ ...input, minHeight: 60, resize: "vertical" }} />
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
             <button onClick={saveItem} style={{ ...btnPrimary, flex: 1 }}>
               {editingId ? <Check size={16} /> : <Plus size={16} />} {editingId ? "SAVE CHANGES" : "ADD"}
@@ -1790,7 +2052,7 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, onBack }) {
       )}
 
       <div style={{ marginTop: mode === "edit" ? 16 : 0 }}>
-        {plan.items.length === 0 && <p className="mono" style={{ color: "#8A8D93", fontSize: 12 }}>No foods in this meal yet.</p>}
+        {plan.items.length === 0 && <p className="mono" style={{ color: "#8A8D93", fontSize: 12 }}>{t("noFoodsYet")}</p>}
         {plan.items.map((m) => (
           <div
             key={m.id}
@@ -1881,7 +2143,7 @@ function BodyComposition({ bodystats, setBodystats }) {
       <div style={card}>
         <input type="number" placeholder={t("height")} value={height} onChange={(e) => setHeight(e.target.value)} style={{ ...input, marginBottom: 8 }} />
         <div style={{ display: "flex", gap: 10 }}>
-          <input type="number" placeholder="Weight (kg)" value={weight} onChange={(e) => setWeight(e.target.value)} style={{ ...input, flex: 1 }} />
+          <input type="number" placeholder={t("phWeightKg")} value={weight} onChange={(e) => setWeight(e.target.value)} style={{ ...input, flex: 1 }} />
           <input type="number" placeholder={t("bodyFat")} value={bodyFat} onChange={(e) => setBodyFat(e.target.value)} style={{ ...input, flex: 1 }} />
         </div>
         <button onClick={addEntry} style={{ ...btnPrimary, width: "100%", marginTop: 10 }}><Plus size={16} /> {t("logMeasurement")}</button>
@@ -1896,7 +2158,7 @@ function BodyComposition({ bodystats, setBodystats }) {
 
       {ffmiData.length >= 2 && CHARTS_OK ? (
         <div style={{ ...card, padding: "18px 8px 8px", marginTop: 16 }}>
-          <div className="mono" style={{ fontSize: 11, color: "#8A8D93", padding: "0 8px 8px" }}>BODY WEIGHT (KG)</div>
+          <div className="mono" style={{ fontSize: 11, color: "#8A8D93", padding: "0 8px 8px" }}>{t("bodyWeightKg")}</div>
           <ResponsiveContainer width="100%" height={180}>
             <LineChart data={ffmiData}>
               <CartesianGrid stroke="#2A2D33" vertical={false} />
@@ -1908,12 +2170,12 @@ function BodyComposition({ bodystats, setBodystats }) {
           </ResponsiveContainer>
         </div>
       ) : (
-        <p className="mono" style={{ color: "#8A8D93", fontSize: 12, textAlign: "center", padding: 24 }}>Log at least 2 measurements to see the trend.</p>
+        <p className="mono" style={{ color: "#8A8D93", fontSize: 12, textAlign: "center", padding: 24 }}>{t("needTwoMeasurements")}</p>
       )}
 
       {ffmiData.length > 0 && (
         <div style={{ marginTop: 16 }}>
-          <SectionLabel>Measurement history</SectionLabel>
+          <SectionLabel>{t("measurementHistory")}</SectionLabel>
           {ffmiData.slice().reverse().map((b) => (
             <div key={b.id} style={{ ...card, marginBottom: 8, padding: "12px 14px" }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -1990,7 +2252,7 @@ function Performance({ workouts }) {
           </ResponsiveContainer>
         </div>
       ) : (
-        <p className="mono" style={{ color: "#8A8D93", fontSize: 12, textAlign: "center", padding: 24 }}>You need at least 2 sessions with this exercise.</p>
+        <p className="mono" style={{ color: "#8A8D93", fontSize: 12, textAlign: "center", padding: 24 }}>{t("needTwoSessions")}</p>
       )}
 
       {points.length > 0 && (
@@ -2024,16 +2286,16 @@ function Books({ notes, setNotes }) {
 
   return (
     <div>
-      <SectionLabel>Method principles</SectionLabel>
-      {PRINCIPLES.map((p, i) => (
+      <SectionLabel>{t("methodPrinciples")}</SectionLabel>
+      {principles().map((p, i) => (
         <div key={i} style={{ ...card, marginBottom: 8, padding: "12px 14px" }}>
           <p className="mono" style={{ fontSize: 12, color: "#E8E6E1", lineHeight: 1.6, margin: 0 }}>{p}</p>
         </div>
       ))}
 
       <div style={{ marginTop: 18 }}>
-        <SectionLabel>Recommended reading</SectionLabel>
-        {BOOKS.map((b, i) => (
+        <SectionLabel>{t("recommended")}</SectionLabel>
+        {books().map((b, i) => (
           <div key={i} style={{ ...card, marginBottom: 8 }}>
             <div className="disp" style={{ fontSize: 14, textTransform: "uppercase" }}>{b.title}</div>
             <div className="mono" style={{ fontSize: 11, color: "#C81E3A", margin: "2px 0 6px" }}>{b.author}</div>
@@ -2043,10 +2305,10 @@ function Books({ notes, setNotes }) {
       </div>
 
       <div style={{ marginTop: 18 }}>
-        <SectionLabel>Your notes</SectionLabel>
+        <SectionLabel>{t("yourNotes")}</SectionLabel>
         <div style={card}>
           <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={t("notesPlaceholder")} style={{ ...input, minHeight: 100, resize: "vertical" }} />
-          <button onClick={saveNotes} style={{ ...btnGhost, width: "100%", marginTop: 10 }}>SAVE NOTES</button>
+          <button onClick={saveNotes} style={{ ...btnGhost, width: "100%", marginTop: 10 }}>{t("saveNotes")}</button>
         </div>
       </div>
     </div>
