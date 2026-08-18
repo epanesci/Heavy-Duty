@@ -76,6 +76,7 @@ const STRINGS = {
     phTargetReps: "Target reps", phTargetNegatives: "Target negatives", phTargetSeconds: "Target seconds",
     searchFood: "Search food database…", perUnit: "per unit", per100: "per 100 g",
     orManual: "Not found — type the values below", pickedFrom: "auto-calculated from database",
+    historyFor: "History for", leanMassKg: "Lean mass (kg)", saveChanges: "SAVE CHANGES", add: "ADD",
   },
   es: {
     tagline: "UNA SERIE. AL FALLO. SIN EXCUSAS.",
@@ -124,6 +125,7 @@ const STRINGS = {
     phTargetReps: "Reps objetivo", phTargetNegatives: "Negativas objetivo", phTargetSeconds: "Segundos objetivo",
     searchFood: "Buscar en la base de alimentos…", perUnit: "por unidad", per100: "por 100 g",
     orManual: "No encontrado — cargá los valores abajo", pickedFrom: "calculado desde la base",
+    historyFor: "Historial de", leanMassKg: "Masa magra (kg)", saveChanges: "GUARDAR CAMBIOS", add: "AGREGAR",
   },
 };
 
@@ -1444,14 +1446,14 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
       {cycle.map((key) => (
         <button key={key} onClick={() => setScreen({ mode: "view", key })} style={{ ...card, marginBottom: 10, width: "100%", textAlign: "left", cursor: "pointer" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span className="disp" style={{ fontSize: 18, fontWeight: 700, textTransform: "uppercase" }}>Day {key}</span>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 7, minWidth: 0 }}>
+                <span className="disp" style={{ fontSize: 18, fontWeight: 700, textTransform: "uppercase", flexShrink: 0 }}>{t("day")} {key}</span>
+                <span className="disp" style={{ fontSize: 12, fontWeight: 700, color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx(routines[key].label)}</span>
                 {key === suggestedRoutine && (
-                  <span className="mono" style={{ fontSize: 10, color: "#C81E3A", border: "1px solid #C81E3A", padding: "2px 6px", letterSpacing: 0.5 }}>{t("suggested")}</span>
+                  <span className="mono" style={{ fontSize: 9, color: "#C81E3A", border: "1px solid #C81E3A", padding: "1px 5px", letterSpacing: 0.5, flexShrink: 0 }}>{t("suggested")}</span>
                 )}
               </div>
-              <div className="disp" style={{ fontSize: 13, fontWeight: 700, color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.6, marginTop: 3 }}>{tx(routines[key].label)}</div>
             </div>
             <ChevronRight size={18} color="#8A8D93" style={{ flexShrink: 0 }} />
           </div>
@@ -2044,7 +2046,7 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, onBack }) {
           <textarea placeholder={t("phDetails")} value={notes} onChange={(e) => setNotes(e.target.value)} style={{ ...input, minHeight: 60, resize: "vertical" }} />
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
             <button onClick={saveItem} style={{ ...btnPrimary, flex: 1 }}>
-              {editingId ? <Check size={16} /> : <Plus size={16} />} {editingId ? "SAVE CHANGES" : "ADD"}
+              {editingId ? <Check size={16} /> : <Plus size={16} />} {editingId ? t("saveChanges") : t("add")}
             </button>
             {editingId && <button onClick={cancelEdit} style={{ ...btnGhost, flex: "0 0 auto" }}><X size={16} /></button>}
           </div>
@@ -2103,8 +2105,8 @@ function Progress({ workouts, bodystats, setBodystats }) {
   return (
     <div>
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        <SubTab label="Performance" active={sub === "performance"} onClick={() => setSub("performance")} />
-        <SubTab label="Body Composition" active={sub === "body"} onClick={() => setSub("body")} />
+        <SubTab label={t("performance")} active={sub === "performance"} onClick={() => setSub("performance")} />
+        <SubTab label={t("bodyComposition")} active={sub === "body"} onClick={() => setSub("body")} />
       </div>
       {sub === "body" ? <BodyComposition bodystats={bodystats} setBodystats={setBodystats} /> : <Performance workouts={workouts} />}
     </div>
@@ -2151,7 +2153,7 @@ function BodyComposition({ bodystats, setBodystats }) {
 
       {latestCalc && (
         <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-          <StatCard value={latestCalc.lean} label="Lean mass (kg)" />
+          <StatCard value={latestCalc.lean} label={t("leanMassKg")} />
           <StatCard value={latestCalc.ffmi ?? "—"} label="FFMI" />
         </div>
       )}
@@ -2240,7 +2242,7 @@ function Performance({ workouts }) {
       </select>
       {points.length >= 2 && CHARTS_OK ? (
         <div style={{ ...card, padding: "18px 8px 8px" }}>
-          <div className="mono" style={{ fontSize: 11, color: "#8A8D93", padding: "0 8px 8px" }}>{isTimeBased ? "SECONDS HELD" : `THEORETICAL 1RM (${unit.toUpperCase()})`}</div>
+          <div className="mono" style={{ fontSize: 11, color: "#8A8D93", padding: "0 8px 8px" }}>{isTimeBased ? t("secondsHeld") : `${t("theoretical1RM")} (${unit.toUpperCase()})`}</div>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={points}>
               <CartesianGrid stroke="#2A2D33" vertical={false} />
@@ -2257,7 +2259,7 @@ function Performance({ workouts }) {
 
       {points.length > 0 && (
         <div style={{ marginTop: 16 }}>
-          <SectionLabel>History for {exercise}</SectionLabel>
+          <SectionLabel>{t("historyFor")} {shortName(exercise)}</SectionLabel>
           {points.slice().reverse().map((p, i) => (
             <div key={i} style={{ ...card, marginBottom: 8, padding: "12px 14px" }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
