@@ -1394,6 +1394,7 @@ function App() {
         :root {
           --hd-header: 53px;
           --hd-nav: calc(64px + max(0px, env(safe-area-inset-bottom) - 8px));
+          --hd-mainpad: 12px; /* only main's top padding reduces the visible area */
         }
         /* The content area owns the scrolling and has an exact height, so the
            bottom nav stays put and nothing ever slides under it. */
@@ -1404,8 +1405,15 @@ function App() {
           overflow-y: auto;
           -webkit-overflow-scrolling: touch;
         }
-        /* A screen that fills exactly the visible area, no more, no less. */
-        .fill-screen { display: flex; flex-direction: column; height: 100%; min-height: 320px; }
+        /* A screen that fills exactly the visible area, no more, no less.
+           Sized from the viewport rather than the parent: a percentage height
+           collapses when any ancestor is auto-height. */
+        .fill-screen {
+          display: flex;
+          flex-direction: column;
+          height: calc(100dvh - var(--hd-header) - var(--hd-nav) - var(--hd-mainpad));
+          min-height: 320px;
+        }
         .fill-screen > .grow { flex: 1 1 0; min-height: 0; overflow: hidden; }
         ::selection { background: #C81E3A; color: #fff; }
       `}</style>
@@ -1884,7 +1892,7 @@ function Food({ mealPlans, setMealPlans }) {
       })}
       </div>
 
-      <div style={{ marginTop: 16 }}>
+      <div style={{ marginTop: 20 }}>
         <SectionLabel>{t("dailyTotal")}</SectionLabel>
         <div style={{ ...card, padding: 14 }}>
           <div style={{ textAlign: "center", marginBottom: 10 }}>
