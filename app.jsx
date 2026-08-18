@@ -77,6 +77,7 @@ const STRINGS = {
     searchFood: "Search food database…", perUnit: "per unit", per100: "per 100 g",
     orManual: "Not found — type the values below", pickedFrom: "auto-calculated from database",
     historyFor: "History for", leanMassKg: "Lean mass (kg)", saveChanges: "SAVE CHANGES", add: "ADD",
+    fatShort: "Fat", leanShort: "Lean mass",
     logSession: "LOG SESSION", positive: "positive", slowNegatives: "slow negatives", hold: "hold", repsWord: "reps",
     saveDay: "SAVE DAY",
   },
@@ -128,6 +129,7 @@ const STRINGS = {
     searchFood: "Buscar en la base de alimentos…", perUnit: "por unidad", per100: "por 100 g",
     orManual: "No encontrado — cargá los valores abajo", pickedFrom: "calculado desde la base",
     historyFor: "Historial de", leanMassKg: "Masa magra (kg)", saveChanges: "GUARDAR CAMBIOS", add: "AGREGAR",
+    fatShort: "Grasa", leanShort: "Masa magra",
     logSession: "REGISTRAR SESIÓN", positive: "positivas", slowNegatives: "negativas lentas", hold: "isométrico", repsWord: "reps",
     saveDay: "GUARDAR DÍA",
   },
@@ -1119,6 +1121,13 @@ function searchFoods(query) {
 }
 
 // Scale a database entry (per 100 g, or per unit) to the requested amount.
+// Macros display with at most one decimal; float sums like 96.30000000000001
+// come from accumulating item values, so every displayed figure goes through this.
+function n1(v) {
+  const n = Number(v) || 0;
+  return Math.round(n * 10) / 10;
+}
+
 function scaleFood(f, qty) {
   const n = Number(qty) || 0;
   const factor = f.u === "u" ? n : n / 100;
@@ -1833,10 +1842,10 @@ function Food({ mealPlans, setMealPlans }) {
                 <div style={{ flexShrink: 0, textAlign: "left" }}>
                   <div className="mono" style={{ fontSize: 13, color: "#C81E3A", fontWeight: 600 }}>{Math.round(tot.kcal)} kcal</div>
                   <div className="mono" style={{ fontSize: 12, color: "#8A8D93", marginTop: 4, display: "grid", gridTemplateColumns: "46px auto", rowGap: 2 }}>
-                    <span><span style={{ display: "inline-block", width: 16 }}>C</span>{tot.carbs}</span>
-                    <span><span style={{ display: "inline-block", width: 16 }}>P</span>{tot.protein}</span>
-                    <span><span style={{ display: "inline-block", width: 16 }}>F</span>{tot.fat}</span>
-                    <span><span style={{ display: "inline-block", width: 16, color: "#C81E3A" }}>F</span>{tot.fiber}</span>
+                    <span><span style={{ display: "inline-block", width: 16 }}>C</span>{n1(tot.carbs)}</span>
+                    <span><span style={{ display: "inline-block", width: 16 }}>P</span>{n1(tot.protein)}</span>
+                    <span><span style={{ display: "inline-block", width: 16 }}>F</span>{n1(tot.fat)}</span>
+                    <span><span style={{ display: "inline-block", width: 16, color: "#C81E3A" }}>F</span>{n1(tot.fiber)}</span>
                   </div>
                 </div>
               </div>
@@ -1854,22 +1863,22 @@ function Food({ mealPlans, setMealPlans }) {
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", textAlign: "center" }}>
             <div style={{ flex: 1 }}>
-              <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: "#E8E6E1" }}>{dayTotals.carbs}g</div>
+              <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: "#E8E6E1" }}>{n1(dayTotals.carbs)}g</div>
               <div className="mono" style={{ fontSize: 13, color: "#C81E3A", marginTop: 3, fontWeight: 600 }}>{dayTotals.kcal ? Math.round((dayTotals.carbs * 4 / dayTotals.kcal) * 100) : 0}%</div>
               <div className="disp" style={{ fontSize: 9, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("carbs")}</div>
             </div>
             <div style={{ flex: 1 }}>
-              <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: "#E8E6E1" }}>{dayTotals.protein}g</div>
+              <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: "#E8E6E1" }}>{n1(dayTotals.protein)}g</div>
               <div className="mono" style={{ fontSize: 13, color: "#C81E3A", marginTop: 3, fontWeight: 600 }}>{dayTotals.kcal ? Math.round((dayTotals.protein * 4 / dayTotals.kcal) * 100) : 0}%</div>
               <div className="disp" style={{ fontSize: 9, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("protein")}</div>
             </div>
             <div style={{ flex: 1 }}>
-              <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: "#E8E6E1" }}>{dayTotals.fat}g</div>
+              <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: "#E8E6E1" }}>{n1(dayTotals.fat)}g</div>
               <div className="mono" style={{ fontSize: 13, color: "#C81E3A", marginTop: 3, fontWeight: 600 }}>{dayTotals.kcal ? Math.round((dayTotals.fat * 9 / dayTotals.kcal) * 100) : 0}%</div>
               <div className="disp" style={{ fontSize: 9, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("fat")}</div>
             </div>
             <div style={{ flex: 1 }}>
-              <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: "#E8E6E1" }}>{dayTotals.fiber}g</div>
+              <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: "#E8E6E1" }}>{n1(dayTotals.fiber)}g</div>
               <div style={{ fontSize: 13, marginTop: 3 }}>&nbsp;</div>
               <div className="disp" style={{ fontSize: 9, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("fiber")}</div>
             </div>
@@ -1941,11 +1950,7 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, onBack }) {
     setQtyOriginal(num);
   };
   const cancelQtyEdit = () => { setQtyEditId(null); setQtyValue(""); setQtySuffix(""); setQtyOriginal(""); };
-  const scaleVal = (v, scale) => {
-    const n = Number(v) || 0;
-    const r = Math.round(n * scale * 10) / 10;
-    return Number.isInteger(r) ? r : r;
-  };
+  const scaleVal = (v, scale) => n1((Number(v) || 0) * scale);
   const scaleKcal = (v, scale) => Math.round((Number(v) || 0) * scale);
   const saveQty = async (m) => {
     const newAmount = qtySuffix ? `${qtyValue} ${qtySuffix}` : qtyValue;
@@ -1990,11 +1995,11 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, onBack }) {
     if (!name.trim()) return;
     const item = {
       id: editingId || "mi" + Date.now(), name, amount,
-      calories: calories ? Number(calories) : 0,
-      carbs: carbs ? Number(carbs) : 0,
-      protein: protein ? Number(protein) : 0,
-      fat: fat ? Number(fat) : 0,
-      fiber: fiber ? Number(fiber) : 0,
+      calories: calories ? Math.round(Number(calories)) : 0,
+      carbs: n1(carbs),
+      protein: n1(protein),
+      fat: n1(fat),
+      fiber: n1(fiber),
       notes,
     };
     const items = editingId ? plan.items.map((m) => (m.id === editingId ? item : m)) : [...plan.items, item];
@@ -2096,7 +2101,7 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, onBack }) {
                 <div className="disp" style={{ fontSize: 14 }}>{m.name}{m.amount ? <span className="mono" style={{ fontSize: 12, color: "#8A8D93" }}> · {m.amount}</span> : ""}</div>
                 {m.calories > 0 && (
                   <div className="mono" style={{ fontSize: 12, color: "#8A8D93", marginTop: 2 }}>
-                    {Math.round(m.calories)} kcal · C {m.carbs || 0}g · P {m.protein || 0}g · F {m.fat || 0}g · Fb {m.fiber || 0}g
+                    {Math.round(m.calories)} kcal · C {n1(m.carbs)}g · P {n1(m.protein)}g · F {n1(m.fat)}g · Fb {n1(m.fiber)}g
                   </div>
                 )}
                 {m.notes && <div className="mono" style={{ fontSize: 12, color: "#8A8D93", marginTop: 4, lineHeight: 1.4 }}>{m.notes}</div>}
@@ -2215,7 +2220,7 @@ function BodyComposition({ bodystats, setBodystats }) {
                 <span className="mono" style={{ fontSize: 12, color: "#C81E3A" }}>{b.weight} kg</span>
               </div>
               <div className="mono" style={{ fontSize: 12, color: "#E8E6E1", marginTop: 4 }}>
-                Fat {b.bodyFat}% · Lean mass {b.lean}kg{b.ffmi ? ` · FFMI ${b.ffmi}` : ""}
+                {t("fatShort")} {b.bodyFat}% · {t("leanShort")} {b.lean}kg{b.ffmi ? ` · FFMI ${b.ffmi}` : ""}
               </div>
             </div>
           ))}
