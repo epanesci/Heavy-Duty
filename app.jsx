@@ -265,6 +265,39 @@ function calcOneRM(weight, reps) {
   return Math.round(w * (1 + r / 30) * 10) / 10;
 }
 
+
+// Short labels for the cramped 4-day overview. Display-only: stored data keeps
+// the full exercise name, so existing logs and backups stay valid.
+const SHORT_NAMES = {
+  "Flat Flyes": "Flyes",
+  "Dumbbell Flyes": "DB Flyes",
+  "Cable Flyes": "Cable Flyes",
+  "Machine Chest Press": "Chest Press",
+  "Machine Incline Press": "Incline Press",
+  "Biceps Machine Curl": "Biceps Curl",
+  "Barbell Curl": "BB Curl",
+  "Dumbbell Lateral Raise": "Lat Raise",
+  "Cable Lateral Raise": "Cable Lat Raise",
+  "Rear Delt Raise": "Rear Delt",
+  "Reverse Pec Deck": "Rev Pec Deck",
+  "Leg Extension": "Leg Ext",
+  "Leg Extension Static Hold": "Leg Ext Hold",
+  "Back Extension": "Back Ext",
+  "Lat Pulldown": "Pulldown",
+  "Close-Grip Palms-Up Pulldown": "CG Pulldown",
+  "Straight-Arm Pulldown": "SA Pulldown",
+  "Triceps Pushdown": "Pushdown",
+  "Cable Pushdown": "Pushdown",
+  "Machine Dips": "Machine Dips",
+  "Conventional Deadlift": "Deadlift",
+  "Standing Calf Raise": "Calf Raise",
+  "Seated Calf Raise": "Seated Calf",
+  "Smith Machine Squat": "Smith Squat",
+};
+function shortName(name) {
+  return SHORT_NAMES[name] || name;
+}
+
 function MetaRow({ slot }) {
   const unit = slot.weightUnit || "kg";
   const weightText = slot.targetWeight != null && slot.targetWeight !== "" ? `${slot.targetWeight}${unit}` : "";
@@ -1123,7 +1156,7 @@ function App() {
         <p className="mono" style={{ fontSize: 11, color: "#8A8D93", margin: "6px 0 0 16px", letterSpacing: 0.5 }}>{t("tagline")}</p>
       </header>
 
-      <main style={{ padding: "18px 16px 100px", maxWidth: 560, margin: "0 auto" }}>
+      <main style={{ padding: "18px 12px 100px", maxWidth: 560, margin: "0 auto" }}>
         {!ready ? (
           <div style={{ textAlign: "center", padding: 60, color: "#8A8D93" }} className="mono">Loading...</div>
         ) : !settings.lang ? (
@@ -1223,8 +1256,8 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
                 {groupIds.map((slotId) => {
                   const slot = routineConfig[key].find((s) => s.slotId === slotId);
                   return (
-                    <div key={slotId} style={{ display: "flex", flexWrap: "wrap", gap: 28, marginTop: 2, paddingLeft: 12 }}>
-                      <span className="mono" style={{ fontSize: 11, color: "#8A8D93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: 128, flexShrink: 0 }}>{slot.exercise}</span>
+                    <div key={slotId} style={{ display: "flex", gap: 10, marginTop: 2, paddingLeft: 8 }}>
+                      <span className="mono" style={{ fontSize: 11, color: "#8A8D93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: 108, flexShrink: 0 }}>{shortName(slot.exercise)}</span>
                       <span className="mono" style={{ fontSize: 11, color: "#8A8D93" }}><MetaRow slot={slot} /></span>
                     </div>
                   );
