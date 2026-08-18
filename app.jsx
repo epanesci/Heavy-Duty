@@ -1847,7 +1847,9 @@ function Food({ mealPlans, setMealPlans }) {
     <div>
       {/* The four meals fill exactly one screen; the daily total sits below the
           fold on purpose, so it takes a deliberate scroll to reach. */}
-      <div className="fill-screen">
+      {/* 4px on top of each card's 8px bottom margin, so the gap under meal D
+          matches main's 12px top padding above meal A. */}
+      <div className="fill-screen" style={{ paddingBottom: 4 }}>
       {MEAL_KEYS.map((key) => {
         const plan = mealPlans[key] || { label: "", items: [] };
         const tot = (plan.items || []).reduce((acc, m) => {
