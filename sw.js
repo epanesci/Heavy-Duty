@@ -1,6 +1,6 @@
 // Heavy Duty — offline cache.
 // Bump CACHE_VERSION whenever app.jsx changes so phones pick up the new build.
-const CACHE_VERSION = 'heavyduty-v8';
+const CACHE_VERSION = 'heavyduty-v9';
 
 const LOCAL_ASSETS = [
   './',

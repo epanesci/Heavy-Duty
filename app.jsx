@@ -77,6 +77,7 @@ const STRINGS = {
     searchFood: "Search food database…", perUnit: "per unit", per100: "per 100 g",
     orManual: "Not found — type the values below", pickedFrom: "auto-calculated from database",
     historyFor: "History for", leanMassKg: "Lean mass (kg)", saveChanges: "SAVE CHANGES", add: "ADD",
+    logSession: "LOG SESSION", positive: "positive", slowNegatives: "slow negatives", hold: "hold", repsWord: "reps",
   },
   es: {
     tagline: "UNA SERIE. AL FALLO. SIN EXCUSAS.",
@@ -126,6 +127,7 @@ const STRINGS = {
     searchFood: "Buscar en la base de alimentos…", perUnit: "por unidad", per100: "por 100 g",
     orManual: "No encontrado — cargá los valores abajo", pickedFrom: "calculado desde la base",
     historyFor: "Historial de", leanMassKg: "Masa magra (kg)", saveChanges: "GUARDAR CAMBIOS", add: "AGREGAR",
+    logSession: "REGISTRAR SESIÓN", positive: "positivas", slowNegatives: "negativas lentas", hold: "isométrico", repsWord: "reps",
   },
 };
 
@@ -964,6 +966,7 @@ const ES_TEXT = {
     "Reps fijas sin llegar al fallo — prioridad a la seguridad en ejercicios de riesgo.",
 };
 function tx(text) {
+  if (!text) return text;
   return CURRENT_LANG === "es" && ES_TEXT[text] ? ES_TEXT[text] : text;
 }
 
@@ -1142,8 +1145,9 @@ function useStorage(key, fallback) {
   return [value, persist, loaded];
 }
 
-const fmtDate = (d) => new Date(d).toLocaleDateString("en-US", { day: "2-digit", month: "short" });
-const fmtDateTime = (d) => new Date(d).toLocaleDateString("en-US", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+const locale = () => (CURRENT_LANG === "es" ? "es-AR" : "en-US");
+const fmtDate = (d) => new Date(d).toLocaleDateString(locale(), { day: "2-digit", month: "short" });
+const fmtDateTime = (d) => new Date(d).toLocaleDateString(locale(), { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 
 function getPrevRecord(workouts, routineKey, slotId) {
   const sessions = workouts.filter((w) => w.routine === routineKey).sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -1507,10 +1511,10 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
                             <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginTop: 2 }}>
                               {e.weight ? `${e.weight}${e.weightUnit || "kg"} · ` : ""}
                               {e.timeBased
-                                ? `${e.seconds || 0}s (hold)`
+                                ? `${e.seconds || 0}s (${t("hold")})`
                                 : e.protocol === "rest_pause" && e.repsBreakdown
-                                ? `${e.repsBreakdown.filter((r) => r).join(" + ")} reps (rest-pause)`
-                                : `${e.reps || 0} positive${e.negatives ? ` + ${e.negatives} slow negatives` : ""}`}
+                                ? `${e.repsBreakdown.filter((r) => r).join(" + ")} ${t("repsWord")} (rest-pause)`
+                                : `${e.reps || 0} ${t("positive")}${e.negatives ? ` + ${e.negatives} ${t("slowNegatives")}` : ""}`}
                               {oneRM ? <> (<b>{oneRM}{e.weightUnit || "kg"}</b>)</> : ""}
                             </div>
                           </div>
@@ -1552,7 +1556,7 @@ function RoutineView({ routineKey, config, workouts, level, onBack, onEdit, onLo
             return (
               <div key={slotId} style={{ paddingTop: si > 0 ? 10 : 0, marginTop: si > 0 ? 10 : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none" }}>
                 <div className="disp" style={{ fontSize: 15 }}>{slot.exercise}</div>
-                <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginTop: 2 }}>{slotDef?.name}{slot.note ? ` · ${slot.note}` : ""}</div>
+                <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginTop: 2 }}>{tx(slotDef?.name)}{slot.note ? ` · ${slot.note}` : ""}</div>
                 <div style={{ marginTop: 8 }}>
                   <span className="mono" style={{ fontSize: 11, color: "#C81E3A" }}>{slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)}</span>
                   <div className="mono" style={{ fontSize: 12, color: "#E8E6E1", marginTop: 4 }}>{t("target")}: <MetaRow slot={slot} /></div>
@@ -1565,7 +1569,7 @@ function RoutineView({ routineKey, config, workouts, level, onBack, onEdit, onLo
       ))}
 
       <button onClick={onLog} style={{ ...btnPrimary, width: "100%", marginTop: 6 }}>
-        <Plus size={16} /> LOG SESSION
+        <Plus size={16} /> {t("logSession")}
       </button>
     </div>
   );
@@ -2271,7 +2275,7 @@ function Performance({ workouts }) {
                   ? `${p.seconds}s (hold)`
                   : p.protocol === "rest_pause" && p.repsBreakdown
                   ? `${p.repsBreakdown.filter((r) => r).join(" + ")} reps (rest-pause)`
-                  : `${p.reps} positive${p.negatives ? ` + ${p.negatives} slow negatives` : ""}`}
+                  : `${p.reps} ${t("positive")}${p.negatives ? ` + ${p.negatives} ${t("slowNegatives")}` : ""}`}
               </div>
             </div>
           ))}
