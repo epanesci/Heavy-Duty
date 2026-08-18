@@ -2253,13 +2253,12 @@ function BodyComposition({ bodystats, setBodystats }) {
           <SectionLabel>{t("measurementHistory")}</SectionLabel>
           {ffmiData.slice().reverse().map((b) => (
             <div key={b.id} style={{ ...card, marginBottom: 8, padding: "12px 14px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span className="mono" style={{ fontSize: 11, color: "#8A8D93" }}>{fmtDate(b.date)}</span>
-                <span className="mono" style={{ fontSize: 12, color: "#C81E3A" }}>{b.weight} kg</span>
-              </div>
-              {/* Fixed columns: values carry a variable number of decimals, so a
-                  plain inline row would shift on every entry. */}
-              <div className="mono" style={{ fontSize: 12, color: "#E8E6E1", marginTop: 4, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+              <div className="mono" style={{ fontSize: 11, color: "#8A8D93" }}>{fmtDate(b.date)}</div>
+              {/* Weight sits in the same grid as the other figures: on its own
+                  line it read as belonging to the date rather than the data.
+                  Fixed columns keep values lined up despite varying decimals. */}
+              <div className="mono" style={{ fontSize: 12, color: "#E8E6E1", marginTop: 5, display: "grid", gridTemplateColumns: "1fr 1fr", rowGap: 3, columnGap: 6 }}>
+                <span style={{ color: "#C81E3A" }}><span style={{ color: "#8A8D93" }}>{t("weight")} </span>{b.weight}kg</span>
                 <span><span style={{ color: "#8A8D93" }}>{t("fatShort")} </span>{b.bodyFat}%</span>
                 <span><span style={{ color: "#8A8D93" }}>{t("leanShort")} </span>{b.lean}kg</span>
                 <span>{b.ffmi ? <><span style={{ color: "#8A8D93" }}>FFMI </span>{b.ffmi}</> : ""}</span>
