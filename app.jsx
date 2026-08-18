@@ -128,8 +128,8 @@ const STRINGS = {
     phTargetReps: "Reps objetivo", phTargetNegatives: "Negativas objetivo", phTargetSeconds: "Segundos objetivo",
     searchFood: "Buscar en la base de alimentos…", perUnit: "por unidad", per100: "por 100 g",
     orManual: "No encontrado — cargá los valores abajo", pickedFrom: "calculado desde la base",
-    historyFor: "Historial de", leanMassKg: "Masa magra (kg)", saveChanges: "GUARDAR CAMBIOS", add: "AGREGAR",
-    fatShort: "Grasa", leanShort: "Masa magra",
+    historyFor: "Historial de", leanMassKg: "M. Magra (kg)", saveChanges: "GUARDAR CAMBIOS", add: "AGREGAR",
+    fatShort: "Grasa", leanShort: "M. Magra",
     logSession: "REGISTRAR SESIÓN", positive: "positivas", slowNegatives: "negativas lentas", hold: "isométrico", repsWord: "reps",
     saveDay: "GUARDAR DÍA",
   },
@@ -1121,20 +1121,20 @@ function searchFoods(query) {
 }
 
 // Scale a database entry (per 100 g, or per unit) to the requested amount.
-// Macros display with at most one decimal; float sums like 96.30000000000001
-// come from accumulating item values, so every displayed figure goes through this.
+// All nutrition figures are shown and stored as whole numbers: tenths of a gram
+// are noise given that portion sizes are estimates, and float sums would
+// otherwise surface as 96.30000000000001.
 function n1(v) {
-  const n = Number(v) || 0;
-  return Math.round(n * 10) / 10;
+  return Math.round(Number(v) || 0);
 }
 
 function scaleFood(f, qty) {
   const n = Number(qty) || 0;
   const factor = f.u === "u" ? n : n / 100;
-  const r1 = (v) => Math.round(v * factor * 10) / 10;
+  const r0 = (v) => Math.round(v * factor);
   return {
     calories: Math.round(f.k * factor),
-    carbs: r1(f.c), protein: r1(f.p), fat: r1(f.f), fiber: r1(f.fb),
+    carbs: r0(f.c), protein: r0(f.p), fat: r0(f.f), fiber: r0(f.fb),
   };
 }
 
