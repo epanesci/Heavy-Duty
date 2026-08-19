@@ -1510,18 +1510,17 @@ function App() {
           .hd-side .side-btn.active { background: #14161A; border-left-color: #C81E3A; }
           .hd-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
           .hd-main.no-header { height: 100dvh; }
-          /* Cards flow into as many columns as fit: two when there is room for
-             two readable ones, a single column when there isn't. */
-          .wide-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
-            gap: 14px;
-          }
+          /* One column when narrow, two once there is room. Capped at two on
+             purpose: a 4-item cycle in three columns leaves a stranded card. */
+          .wide-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
           .wide-grid > .grow { flex: none; overflow: visible; }
           .fill-screen.wide-grid { height: auto; min-height: 0; }
           .side-col { margin-top: 18px; }
         }
         /* Only once there is genuinely room: days left, history in a side column. */
+        @media (min-width: 1024px) {
+          .wide-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
         @media (min-width: 1150px) {
           .split-layout {
             display: grid;
@@ -1532,8 +1531,8 @@ function App() {
           .side-col { margin-top: 0; }
         }
         @media (min-width: 1360px) {
-          .split-layout { grid-template-columns: minmax(0, 1fr) 380px; }
-          .wide-grid { gap: 16px; }
+          .split-layout { grid-template-columns: minmax(0, 1fr) 400px; gap: 22px; }
+          .wide-grid { gap: 18px; }
         }
         ::selection { background: #C81E3A; color: #fff; }
       `}</style>
@@ -1567,7 +1566,7 @@ function App() {
         </div>
       </header>
 
-      <main className={"hd-main" + (railShown ? " no-header" : "")} style={{ padding: isWide ? "20px 24px 24px" : "12px 12px 14px", maxWidth: isWide ? 1400 : 560, margin: "0 auto", width: "100%" }}>
+      <main className={"hd-main" + (railShown ? " no-header" : "")} style={{ padding: isWide ? "22px 28px 28px" : "12px 12px 14px", maxWidth: isWide ? 2000 : 560, margin: "0 auto", width: "100%" }}>
         {!ready ? (
           <div style={{ textAlign: "center", padding: 60, color: "#8A8D93" }} className="mono">{t("loading")}</div>
         ) : !settings.lang ? (
