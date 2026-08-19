@@ -2144,6 +2144,84 @@ function Food({ mealPlans, setMealPlans }) {
   );
 }
 
+// One food, editable in place. The name field doubles as the database search:
+// picking a suggestion fills the macros, and changing the amount rescales them.
+function FoodRowEditor({ item, onChange, onDelete, onDone }) {
+  const [draft, setDraft] = useState(item);
+  const [query, setQuery] = useState("");
+  const [source, setSource] = useState(null); // db entry the macros came from
+
+  const set = (patch) => {
+    const next = { ...draft, ...patch };
+    setDraft(next);
+    onChange(next);
+  };
+
+  const pick = (f) => {
+    const qty = f.u === "u" ? 1 : 100;
+    const v = scaleFood(f, qty);
+    setSource(f);
+    setQuery("");
+    set({ name: foodLabel(f), amount: f.u === "u" ? "1" : "100 g", ...v });
+  };
+
+  const onAmount = (val) => {
+    if (!source) return set({ amount: val });
+    const num = parseFloat(String(val).replace(",", "."));
+    set(isNaN(num) ? { amount: val } : { amount: val, ...scaleFood(source, num) });
+  };
+
+  const num = { ...input, padding: "5px 6px", fontSize: 12, width: "100%", textAlign: "center" };
+  const hits = searchFoods(query);
+
+  return (
+    <div style={{ ...card, marginBottom: 3, padding: "8px 10px", border: "1px solid #C81E3A" }}>
+      <div style={{ display: "flex", gap: 6, alignItems: "center", position: "relative" }}>
+        <input
+          autoFocus
+          value={query || draft.name}
+          placeholder={t("phFood")}
+          onChange={(e) => { setQuery(e.target.value); set({ name: e.target.value }); setSource(null); }}
+          style={{ ...input, padding: "5px 8px", fontSize: 14, flex: 1, minWidth: 0 }}
+        />
+        <input
+          value={draft.amount || ""}
+          placeholder={t("amount")}
+          onChange={(e) => onAmount(e.target.value)}
+          style={{ ...input, padding: "5px 8px", fontSize: 13, width: 92 }}
+        />
+        <button onClick={onDone} style={{ background: "none", border: "none", color: "#C81E3A", cursor: "pointer", padding: 4 }}><Check size={17} /></button>
+        <button onClick={onDelete} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer", padding: 4 }}><Trash2 size={16} /></button>
+
+        {query.trim() !== "" && hits.length > 0 && (
+          <div style={{ position: "absolute", left: 0, right: 0, top: "100%", zIndex: 30, marginTop: 2,
+                        background: "#1E2126", border: "1px solid #C81E3A", maxHeight: 190, overflowY: "auto" }}>
+            {hits.map((f) => (
+              <button key={f.n} onClick={() => pick(f)}
+                style={{ display: "block", width: "100%", textAlign: "left", background: "none",
+                         border: "none", borderBottom: "1px solid #2A2D33", padding: "7px 10px", cursor: "pointer" }}>
+                <div className="disp" style={{ fontSize: 13 }}>{foodLabel(f)}</div>
+                <div className="mono" style={{ fontSize: 10, color: "#8A8D93", marginTop: 1 }}>
+                  {f.k} kcal · C {f.c} · P {f.p} · F {f.f} — {f.u === "u" ? t("perUnit") : t("per100")}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5, marginTop: 6 }}>
+        {[["calories", "kcal"], ["carbs", "C"], ["protein", "P"], ["fat", "F"], ["fiber", "Fb"]].map(([k, lbl]) => (
+          <label key={k} style={{ display: "block" }}>
+            <span className="mono" style={{ fontSize: 9, color: "#8A8D93", display: "block", textAlign: "center", marginBottom: 1 }}>{lbl}</span>
+            <input type="number" className="mono" value={draft[k] ?? ""} onChange={(e) => set({ [k]: n1(e.target.value) })} style={num} />
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack }) {
   const [mode, setMode] = useState("view");
   const [name, setName] = useState("");
@@ -2162,6 +2240,18 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
   const [qtyOriginal, setQtyOriginal] = useState("");
   const [dbQuery, setDbQuery] = useState("");
   const [dbPick, setDbPick] = useState(null);
+  const [openRow, setOpenRow] = useState(null);
+
+  // Desktop edits each row straight into the plan — no edit mode, no separate form.
+  const patchItem = (next) => {
+    const items = plan.items.map((m) => (m.id === next.id ? next : m));
+    persist(items);
+  };
+  const addBlankItem = async () => {
+    const blank = { id: "mi" + Date.now(), name: "", amount: "", calories: 0, carbs: 0, protein: 0, fat: 0, fiber: 0, notes: "" };
+    await persist([...(plan.items || []), blank]);
+    setOpenRow(blank.id);
+  };
 
   // Selecting a database food fills the macro fields; changing the amount
   // afterwards recalculates them, until the user edits a field by hand.
@@ -2284,12 +2374,19 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
           )}
           <span className="disp" style={{ fontSize: inline ? 17 : 18, textTransform: "uppercase" }}>{t("meal")} {planKey}</span>
         </div>
-        <button onClick={() => { setMode(mode === "view" ? "edit" : "view"); if (mode === "edit") cancelEdit(); }} style={{ background: "none", border: "none", color: mode === "edit" ? "#C81E3A" : "#8A8D93", cursor: "pointer" }}>
-          {mode === "view" ? <Settings2 size={18} /> : <Check size={18} />}
-        </button>
+        {inline ? (
+          <button onClick={addBlankItem} title={t("addFood")}
+            style={{ background: "none", border: "1px solid #3A3F47", color: "#8A8D93", cursor: "pointer", padding: "3px 8px", display: "flex", alignItems: "center", gap: 5 }}>
+            <Plus size={15} /><span className="disp" style={{ fontSize: 11, textTransform: "uppercase" }}>{t("add")}</span>
+          </button>
+        ) : (
+          <button onClick={() => { setMode(mode === "view" ? "edit" : "view"); if (mode === "edit") cancelEdit(); }} style={{ background: "none", border: "none", color: mode === "edit" ? "#C81E3A" : "#8A8D93", cursor: "pointer" }}>
+            {mode === "view" ? <Settings2 size={18} /> : <Check size={18} />}
+          </button>
+        )}
       </div>
 
-      {mode === "edit" ? (
+      {mode === "edit" && !inline ? (
         <div style={{ ...card, marginBottom: 12 }}>
           <input placeholder={t("phLabel")} value={label} onChange={(e) => setLabel(e.target.value)} onBlur={saveLabel} style={input} />
         </div>
@@ -2297,7 +2394,7 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
         <div className="disp" style={{ fontSize: 15, color: "#8A8D93", marginBottom: 12 }}>{plan.label}</div>
       ) : null}
 
-      {mode === "edit" && (
+      {mode === "edit" && !inline && (
         <div style={card}>
           <div style={{ position: "relative", marginBottom: 8 }}>
             <input
@@ -2351,6 +2448,31 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
       <div className={inline ? "meal-scroll" : undefined} style={{ marginTop: mode === "edit" ? 16 : 0 }}>
         {plan.items.length === 0 && <p className="mono" style={{ color: "#8A8D93", fontSize: 12 }}>{t("noFoodsYet")}</p>}
         {plan.items.map((m) => (
+          inline ? (
+            openRow === m.id ? (
+              <FoodRowEditor
+                key={m.id} item={m}
+                onChange={patchItem}
+                onDelete={() => { setOpenRow(null); removeItem(m.id); }}
+                onDone={() => setOpenRow(null)}
+              />
+            ) : (
+              <div key={m.id} onClick={() => setOpenRow(m.id)}
+                style={{ ...card, marginBottom: 3, padding: "5px 10px", cursor: "pointer" }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
+                  <span className="disp" style={{ fontSize: 15, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "45%", color: m.name ? undefined : "#8A8D93" }}>
+                    {m.name || t("phFood")}
+                    {m.amount ? <span className="mono" style={{ fontSize: 12, color: "#8A8D93" }}> · {m.amount}</span> : ""}
+                  </span>
+                  {m.calories > 0 && (
+                    <span className="mono" style={{ fontSize: 13, color: "#8A8D93", whiteSpace: "nowrap", marginLeft: "auto" }}>
+                      {Math.round(m.calories)} kcal · C {n1(m.carbs)} · P {n1(m.protein)} · F {n1(m.fat)} · Fb {n1(m.fiber)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          ) : (
           <div
             key={m.id}
             onClick={() => { if (mode === "edit") { startEdit(m); } else { startQtyEdit(m); } }}
@@ -2405,6 +2527,7 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
               </div>
             </div>
           </div>
+          )
         ))}
       </div>
 
