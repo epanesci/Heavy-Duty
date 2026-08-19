@@ -1510,10 +1510,30 @@ function App() {
           .hd-side .side-btn.active { background: #14161A; border-left-color: #C81E3A; }
           .hd-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
           .hd-main.no-header { height: 100dvh; }
-          /* Wide screens have room to show the four cards side by side. */
-          .wide-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+          /* Cards flow into as many columns as fit: two when there is room for
+             two readable ones, a single column when there isn't. */
+          .wide-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+            gap: 14px;
+          }
           .wide-grid > .grow { flex: none; overflow: visible; }
           .fill-screen.wide-grid { height: auto; min-height: 0; }
+          .food-side { margin-top: 18px; }
+        }
+        /* Only once there is genuinely room: meals left, totals in a side column. */
+        @media (min-width: 1150px) {
+          .food-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 300px;
+            gap: 18px;
+            align-items: start;
+          }
+          .food-side { position: sticky; top: 0; margin-top: 0; }
+        }
+        @media (min-width: 1360px) {
+          .food-layout { grid-template-columns: minmax(0, 1fr) 340px; }
+          .wide-grid { gap: 16px; }
         }
         ::selection { background: #C81E3A; color: #fff; }
       `}</style>
@@ -1978,6 +1998,7 @@ function Food({ mealPlans, setMealPlans }) {
     <div>
       {/* The four meals fill exactly one screen; the daily total sits below the
           fold on purpose, so it takes a deliberate scroll to reach. */}
+      <div className={isWide ? "food-layout" : undefined}>
       {/* Ends short of the nav bar so meal D doesn't sit flush against it. */}
       <div className={isWide ? "wide-grid" : "fill-screen"}
         style={isWide ? undefined : { height: "calc(100dvh - var(--hd-header) - var(--hd-nav) - var(--hd-mainpad) - 28px)" }}>
@@ -2025,7 +2046,7 @@ function Food({ mealPlans, setMealPlans }) {
       })}
       </div>
 
-      <div style={{ marginTop: isWide ? 18 : 40 }}>
+      <div className={isWide ? "food-side" : undefined} style={isWide ? undefined : { marginTop: 40 }}>
         <SectionLabel>{t("dailyTotal")}</SectionLabel>
         <div style={{ ...card, padding: 14 }}>
           <div style={{ textAlign: "center", marginBottom: 10 }}>
@@ -2055,6 +2076,7 @@ function Food({ mealPlans, setMealPlans }) {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
