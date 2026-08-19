@@ -210,6 +210,13 @@ function useIsWide() {
   return wide;
 }
 
+// Desktop renders everything a notch larger. Kept as a real size change rather
+// than a zoom so media queries keep measuring the true viewport width.
+let SCALE = 1;
+function px(n) {
+  return SCALE === 1 ? n : Math.round(n * SCALE);
+}
+
 let CURRENT_LANG = "en";
 function t(key) {
   return (STRINGS[CURRENT_LANG] && STRINGS[CURRENT_LANG][key]) || STRINGS.en[key] || key;
@@ -1291,8 +1298,8 @@ function LanguagePicker({ onPick }) {
   return (
     <div style={{ paddingTop: 20 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-        <Globe size={22} color="#C81E3A" />
-        <h2 className="disp" style={{ fontSize: 20, textTransform: "uppercase", margin: 0 }}>
+        <Globe size={px(22)} color="#C81E3A" />
+        <h2 className="disp" style={{ fontSize: px(20), textTransform: "uppercase", margin: 0 }}>
           Choose your language / Elegí tu idioma
         </h2>
       </div>
@@ -1301,8 +1308,8 @@ function LanguagePicker({ onPick }) {
           style={{ ...card, marginBottom: 10, width: "100%", textAlign: "left", cursor: "pointer",
                    border: sel === code ? "1px solid #C81E3A" : "1px solid #2A2D33" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span className="disp" style={{ fontSize: 18, textTransform: "uppercase" }}>{name}</span>
-            {sel === code && <Check size={18} color="#C81E3A" />}
+            <span className="disp" style={{ fontSize: px(18), textTransform: "uppercase" }}>{name}</span>
+            {sel === code && <Check size={px(18)} color="#C81E3A" />}
           </div>
         </button>
       ))}
@@ -1318,8 +1325,8 @@ function SettingsScreen({ settings, setSettings, onExport, onImport, onReset, on
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-        <button onClick={onClose} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={20} /></button>
-        <span className="disp" style={{ fontSize: 18, textTransform: "uppercase" }}>{t("settings")}</span>
+        <button onClick={onClose} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={px(20)} /></button>
+        <span className="disp" style={{ fontSize: px(18), textTransform: "uppercase" }}>{t("settings")}</span>
       </div>
 
       <SectionLabel>{t("language")}</SectionLabel>
@@ -1337,22 +1344,22 @@ function SettingsScreen({ settings, setSettings, onExport, onImport, onReset, on
 
       <SectionLabel>{t("exportData")}</SectionLabel>
       <div style={{ ...card, marginBottom: 12 }}>
-        <p className="mono" style={{ fontSize: 11, color: "#8A8D93", margin: "0 0 10px", lineHeight: 1.5 }}>{t("exportHint")}</p>
-        <button onClick={onExport} style={{ ...btnPrimary, width: "100%" }}><Download size={16} /> {t("exportData")}</button>
+        <p className="mono" style={{ fontSize: px(11), color: "#8A8D93", margin: "0 0 10px", lineHeight: 1.5 }}>{t("exportHint")}</p>
+        <button onClick={onExport} style={{ ...btnPrimary, width: "100%" }}><Download size={px(16)} /> {t("exportData")}</button>
       </div>
 
       <SectionLabel>{t("importData")}</SectionLabel>
       <div style={{ ...card, marginBottom: 24 }}>
-        <p className="mono" style={{ fontSize: 11, color: "#8A8D93", margin: "0 0 10px", lineHeight: 1.5 }}>{t("importHint")}</p>
+        <p className="mono" style={{ fontSize: px(11), color: "#8A8D93", margin: "0 0 10px", lineHeight: 1.5 }}>{t("importHint")}</p>
         <input ref={fileRef} type="file" accept="application/json" style={{ display: "none" }}
           onChange={(e) => { onImport(e.target.files[0]); e.target.value = ""; }} />
         <button onClick={() => fileRef.current && fileRef.current.click()} style={{ ...btnGhost, width: "100%" }}>
-          <Upload size={16} /> {t("importData")}
+          <Upload size={px(16)} /> {t("importData")}
         </button>
       </div>
 
       <button onClick={onReset} style={{ ...btnGhost, width: "100%", color: "#C81E3A", borderColor: "#C81E3A" }}>
-        <Trash2 size={16} /> {t("resetApp")}
+        <Trash2 size={px(16)} /> {t("resetApp")}
       </button>
     </div>
   );
@@ -1365,8 +1372,8 @@ function LevelPicker({ onPick }) {
   return (
     <div>
       <div style={{ marginBottom: 20 }}>
-        <h2 className="disp" style={{ fontSize: 20, textTransform: "uppercase", margin: "0 0 6px" }}>{t("chooseLevel")}</h2>
-        <p className="mono" style={{ fontSize: 12, color: "#8A8D93", margin: 0, lineHeight: 1.5 }}>
+        <h2 className="disp" style={{ fontSize: px(20), textTransform: "uppercase", margin: "0 0 6px" }}>{t("chooseLevel")}</h2>
+        <p className="mono" style={{ fontSize: px(12), color: "#8A8D93", margin: 0, lineHeight: 1.5 }}>
           {t("levelIntro")}
         </p>
       </div>
@@ -1375,11 +1382,11 @@ function LevelPicker({ onPick }) {
         return (
           <button key={key} onClick={() => onPick(key)} style={{ ...card, marginBottom: 12, width: "100%", textAlign: "left", cursor: "pointer" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span className="disp" style={{ fontSize: 18, fontWeight: 700, textTransform: "uppercase" }}>{t(key)}</span>
-              <ChevronRight size={18} color="#8A8D93" />
+              <span className="disp" style={{ fontSize: px(18), fontWeight: 700, textTransform: "uppercase" }}>{t(key)}</span>
+              <ChevronRight size={px(18)} color="#8A8D93" />
             </div>
-            <p className="mono" style={{ fontSize: 11, color: "#8A8D93", margin: "6px 0 8px", lineHeight: 1.5 }}>{summaries[key]}</p>
-            <div className="mono" style={{ fontSize: 11, color: "#C81E3A" }}>
+            <p className="mono" style={{ fontSize: px(11), color: "#8A8D93", margin: "6px 0 8px", lineHeight: 1.5 }}>{summaries[key]}</p>
+            <div className="mono" style={{ fontSize: px(11), color: "#C81E3A" }}>
               {lvl.cycle.map((k) => getRoutines(key)[k].label).join(" · ")}
             </div>
           </button>
@@ -1403,6 +1410,7 @@ function App() {
   const isWide = useIsWide();
   const railShown = isWide && ready && settings.lang && settings.onboarded;
   CURRENT_LANG = settings.lang || "en";
+  SCALE = isWide ? 1.12 : 1;
 
   const pickLang = async (lang) => { await setSettings({ ...settings, lang }); };
 
@@ -1469,6 +1477,10 @@ function App() {
         /* Measured from the real header/nav paddings; the nav grows with the
            phone's gesture bar, so its inset is part of the calculation. */
         :root {
+          /* Everything vertical is measured against --hd-vh instead of 100dvh:
+             when the desktop layout is zoomed, the viewport it can use shrinks
+             by the same factor, otherwise the fixed-height screens overflow. */
+          --hd-vh: 100dvh;
           --hd-header: 53px;
           --hd-nav: calc(64px + max(0px, env(safe-area-inset-bottom) - 8px));
           --hd-mainpad: 12px; /* only main's top padding reduces the visible area */
@@ -1477,7 +1489,7 @@ function App() {
            bottom nav stays put and nothing ever slides under it. */
         html, body { overflow: hidden; overscroll-behavior: none; }
         .hd-main {
-          height: calc(100dvh - var(--hd-header) - var(--hd-nav));
+          height: calc(var(--hd-vh) - var(--hd-header) - var(--hd-nav));
           box-sizing: border-box;
           overflow-y: auto;
           -webkit-overflow-scrolling: touch;
@@ -1488,28 +1500,30 @@ function App() {
         .fill-screen {
           display: flex;
           flex-direction: column;
-          height: calc(100dvh - var(--hd-header) - var(--hd-nav) - var(--hd-mainpad));
+          height: calc(var(--hd-vh) - var(--hd-header) - var(--hd-nav) - var(--hd-mainpad));
           min-height: 320px;
         }
         .fill-screen > .grow { flex: 1 1 0; min-height: 0; overflow: hidden; }
 
         /* ---------- Desktop: side rail instead of a bottom bar ---------- */
         @media (min-width: 900px) {
+          /* Reads a touch small at 100% on a desktop screen; this matches
+             setting the browser zoom to 110%. */
           :root { --hd-nav: 0px; }
-          .hd-shell { display: flex; height: 100dvh; }
+          .hd-shell { display: flex; height: var(--hd-vh); }
           .hd-side {
-            width: 208px; flex-shrink: 0; background: #1E2126;
+            width: 232px; flex-shrink: 0; background: #1E2126;
             border-right: 1px solid #2A2D33; display: flex; flex-direction: column;
-            padding: 20px 12px;
+            padding: 22px 14px;
           }
           .hd-side .side-btn {
             display: flex; align-items: center; gap: 12px; width: 100%;
-            background: none; border: none; padding: 11px 12px; cursor: pointer;
+            background: none; border: none; padding: 12px 13px; cursor: pointer;
             text-align: left; border-left: 3px solid transparent;
           }
           .hd-side .side-btn.active { background: #14161A; border-left-color: #C81E3A; }
           .hd-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-          .hd-main.no-header { height: 100dvh; }
+          .hd-main.no-header { height: var(--hd-vh); }
           /* One column when narrow, two once there is room. Capped at two on
              purpose: a 4-item cycle in three columns leaves a stranded card. */
           .wide-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
@@ -1522,7 +1536,7 @@ function App() {
           .food-screen {
             display: flex;
             flex-direction: column;
-            height: calc(100dvh - 50px);
+            height: calc(var(--hd-vh) - 50px);
           }
           .food-screen > .wide-grid { flex: 1 1 0; min-height: 0; }
           /* A long meal scrolls its food list rather than pushing the totals
@@ -1544,7 +1558,7 @@ function App() {
             display: grid;
             grid-template-columns: minmax(0, 1fr) 330px;
             gap: 18px;
-            height: calc(100dvh - 50px);
+            height: calc(var(--hd-vh) - 50px);
           }
           .split-layout > .wide-grid { min-height: 0; }
           .split-layout > .wide-grid > * { min-height: 0; }
@@ -1562,25 +1576,25 @@ function App() {
         <aside className="hd-side">
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 12px 22px" }}>
             <div style={{ width: 6, height: 26, background: "#C81E3A" }} />
-            <span className="disp" style={{ fontSize: 20, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>Heavy Duty</span>
+            <span className="disp" style={{ fontSize: px(20), fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>Heavy Duty</span>
           </div>
-          <SideBtn icon={<Flame size={18} />} label={t("train")} active={tab === "train"} onClick={() => setTab("train")} />
-          <SideBtn icon={<Utensils size={18} />} label={t("food")} active={tab === "food"} onClick={() => setTab("food")} />
-          <SideBtn icon={<TrendingUp size={18} />} label={t("progress")} active={tab === "progress"} onClick={() => setTab("progress")} />
-          <SideBtn icon={<BookOpen size={18} />} label={t("books")} active={tab === "books"} onClick={() => setTab("books")} />
+          <SideBtn icon={<Flame size={px(18)} />} label={t("train")} active={tab === "train"} onClick={() => setTab("train")} />
+          <SideBtn icon={<Utensils size={px(18)} />} label={t("food")} active={tab === "food"} onClick={() => setTab("food")} />
+          <SideBtn icon={<TrendingUp size={px(18)} />} label={t("progress")} active={tab === "progress"} onClick={() => setTab("progress")} />
+          <SideBtn icon={<BookOpen size={px(18)} />} label={t("books")} active={tab === "books"} onClick={() => setTab("books")} />
           <div style={{ flex: 1 }} />
-          <SideBtn icon={<Settings2 size={18} />} label={t("settings")} active={showSettings} onClick={() => setShowSettings((v) => !v)} />
+          <SideBtn icon={<Settings2 size={px(18)} />} label={t("settings")} active={showSettings} onClick={() => setShowSettings((v) => !v)} />
         </aside>
       )}
       <div className={isWide ? "hd-body" : undefined}>
       <header style={{ padding: "14px 16px 12px", borderBottom: "1px solid #2A2D33", display: railShown ? "none" : "block" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 6, height: 26, background: "#C81E3A" }} />
-          <h1 className="disp" style={{ fontSize: 22, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", margin: 0, flex: 1 }}>Heavy Duty</h1>
+          <h1 className="disp" style={{ fontSize: px(22), fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", margin: 0, flex: 1 }}>Heavy Duty</h1>
           {ready && settings.lang && settings.onboarded && (
             <button onClick={() => setShowSettings((v) => !v)} aria-label={t("settings")}
               style={{ background: "none", border: "none", color: showSettings ? "#C81E3A" : "#8A8D93", cursor: "pointer", padding: 4 }}>
-              <Settings2 size={20} />
+              <Settings2 size={px(20)} />
             </button>
           )}
         </div>
@@ -1615,10 +1629,10 @@ function App() {
 
       {!isWide && ready && settings.lang && settings.onboarded && !showSettings && (
         <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#1E2126", borderTop: "1px solid #2A2D33", display: "flex", padding: "8px 0 max(8px, env(safe-area-inset-bottom))" }}>
-          <NavBtn icon={<Flame size={19} />} label={t("train")} active={tab === "train"} onClick={() => setTab("train")} />
-          <NavBtn icon={<Utensils size={19} />} label={t("food")} active={tab === "food"} onClick={() => setTab("food")} />
-          <NavBtn icon={<TrendingUp size={19} />} label={t("progress")} active={tab === "progress"} onClick={() => setTab("progress")} />
-          <NavBtn icon={<BookOpen size={19} />} label={t("books")} active={tab === "books"} onClick={() => setTab("books")} />
+          <NavBtn icon={<Flame size={px(19)} />} label={t("train")} active={tab === "train"} onClick={() => setTab("train")} />
+          <NavBtn icon={<Utensils size={px(19)} />} label={t("food")} active={tab === "food"} onClick={() => setTab("food")} />
+          <NavBtn icon={<TrendingUp size={px(19)} />} label={t("progress")} active={tab === "progress"} onClick={() => setTab("progress")} />
+          <NavBtn icon={<BookOpen size={px(19)} />} label={t("books")} active={tab === "books"} onClick={() => setTab("books")} />
         </nav>
       )}
     </div>
@@ -1630,7 +1644,7 @@ function SideBtn({ icon, label, active, onClick }) {
     <button onClick={onClick} className={"side-btn" + (active ? " active" : "")}
       style={{ color: active ? "#C81E3A" : "#8A8D93" }}>
       {icon}
-      <span className="disp" style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+      <span className="disp" style={{ fontSize: px(13), textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
     </button>
   );
 }
@@ -1639,7 +1653,7 @@ function NavBtn({ icon, label, active, onClick }) {
   return (
     <button onClick={onClick} style={{ flex: 1, background: "none", border: "none", color: active ? "#C81E3A" : "#8A8D93", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: 6, cursor: "pointer" }}>
       {icon}
-      <span className="disp" style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
+      <span className="disp" style={{ fontSize: px(10), textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</span>
     </button>
   );
 }
@@ -1705,14 +1719,14 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 7, minWidth: 0 }}>
-                <span className="disp" style={{ fontSize: 18, fontWeight: 700, textTransform: "uppercase", flexShrink: 0 }}>{t("day")} {key}</span>
-                <span className="disp" style={{ fontSize: 12, fontWeight: 700, color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx(routines[key].label)}</span>
+                <span className="disp" style={{ fontSize: px(18), fontWeight: 700, textTransform: "uppercase", flexShrink: 0 }}>{t("day")} {key}</span>
+                <span className="disp" style={{ fontSize: px(12), fontWeight: 700, color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx(routines[key].label)}</span>
                 {key === suggestedRoutine && (
-                  <span className="mono" style={{ fontSize: 9, color: "#C81E3A", border: "1px solid #C81E3A", padding: "1px 5px", letterSpacing: 0.5, flexShrink: 0 }}>{t("suggested")}</span>
+                  <span className="mono" style={{ fontSize: px(9), color: "#C81E3A", border: "1px solid #C81E3A", padding: "1px 5px", letterSpacing: 0.5, flexShrink: 0 }}>{t("suggested")}</span>
                 )}
               </div>
             </div>
-            <ChevronRight size={18} color="#8A8D93" style={{ flexShrink: 0 }} />
+            <ChevronRight size={px(18)} color="#8A8D93" style={{ flexShrink: 0 }} />
           </div>
           <div style={{ marginTop: 8 }}>
             {getGroups(key, level).map((groupIds, gi) => (
@@ -1723,9 +1737,9 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
                 {groupIds.map((slotId) => {
                   const slot = routineConfig[key].find((s) => s.slotId === slotId);
                   return (
-                    <div key={slotId} style={{ display: "grid", gridTemplateColumns: "104px 1fr", gap: 10, marginTop: 2 }}>
-                      <span className="mono" style={{ fontSize: 11, color: "#8A8D93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortName(slot.exercise)}</span>
-                      <span className="mono" style={{ fontSize: 11, color: "#8A8D93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><MetaRow slot={slot} /></span>
+                    <div key={slotId} style={{ display: "grid", gridTemplateColumns: `${px(104)}px 1fr`, gap: 10, marginTop: 2 }}>
+                      <span className="mono" style={{ fontSize: px(11), color: "#8A8D93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortName(slot.exercise)}</span>
+                      <span className="mono" style={{ fontSize: px(11), color: "#8A8D93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><MetaRow slot={slot} /></span>
                     </div>
                   );
                 })}
@@ -1741,20 +1755,20 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
         style={{ marginTop: isWide ? undefined : (historyOpen ? 18 : 4), flexShrink: 0 }}>
         <button onClick={() => setHistoryOpen((v) => !v)} style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <SectionLabel>{t("history")}</SectionLabel>
-          <ChevronDown size={16} color="#8A8D93" style={{ transform: historyOpen ? "rotate(180deg)" : "none" }} />
+          <ChevronDown size={px(16)} color="#8A8D93" style={{ transform: historyOpen ? "rotate(180deg)" : "none" }} />
         </button>
         {historyOpen && (
           <>
-            {workouts.length === 0 && <p className="mono" style={{ color: "#8A8D93", fontSize: 12 }}>{t("noSessions")}</p>}
+            {workouts.length === 0 && <p className="mono" style={{ color: "#8A8D93", fontSize: px(12) }}>{t("noSessions")}</p>}
             {workouts.slice().sort((a, b) => new Date(b.date) - new Date(a.date)).map((w) => {
               const isOpen = expandedHistory === w.id;
               return (
                 <div key={w.id} style={{ ...card, marginBottom: 8, padding: 0, overflow: "hidden" }}>
                   <button onClick={() => setExpandedHistory(isOpen ? null : w.id)} style={{ width: "100%", background: "none", border: "none", padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", color: "inherit" }}>
-                    <span className="disp" style={{ fontSize: 14, textTransform: "uppercase" }}>Day {w.routine}</span>
+                    <span className="disp" style={{ fontSize: px(14), textTransform: "uppercase" }}>Day {w.routine}</span>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span className="mono" style={{ fontSize: 11, color: "#8A8D93" }}>{fmtDateTime(w.date)}</span>
-                      <ChevronDown size={14} color="#8A8D93" style={{ transform: isOpen ? "rotate(180deg)" : "none" }} />
+                      <span className="mono" style={{ fontSize: px(11), color: "#8A8D93" }}>{fmtDateTime(w.date)}</span>
+                      <ChevronDown size={px(14)} color="#8A8D93" style={{ transform: isOpen ? "rotate(180deg)" : "none" }} />
                     </div>
                   </button>
                   {isOpen && (
@@ -1766,8 +1780,8 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
                         const oneRM = e.timeBased ? null : calcOneRM(e.weight, positiveReps);
                         return (
                           <div key={i} style={{ borderTop: "1px solid #2A2D33", padding: "8px 0" }}>
-                            <div className="disp" style={{ fontSize: 13 }}>{e.exercise}</div>
-                            <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginTop: 2 }}>
+                            <div className="disp" style={{ fontSize: px(13) }}>{e.exercise}</div>
+                            <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", marginTop: 2 }}>
                               {e.weight ? `${e.weight}${e.weightUnit || "kg"} · ` : ""}
                               {e.timeBased
                                 ? `${e.seconds || 0}s (${t("hold")})`
@@ -1800,10 +1814,10 @@ function SlotRowEditor({ slot, slotDef, onChange, onDelete, onDone }) {
     setDraft(next);
     onChange(next);
   };
-  const numStyle = { ...input, padding: "5px 6px", fontSize: 13, width: "100%", textAlign: "center" };
+  const numStyle = { ...input, padding: "5px 6px", fontSize: px(13), width: "100%", textAlign: "center" };
   const Field = ({ label, children }) => (
     <label style={{ display: "block" }}>
-      <span className="mono" style={{ fontSize: 9, color: "#8A8D93", display: "block", textAlign: "center", marginBottom: 1 }}>{label}</span>
+      <span className="mono" style={{ fontSize: px(9), color: "#8A8D93", display: "block", textAlign: "center", marginBottom: 1 }}>{label}</span>
       {children}
     </label>
   );
@@ -1812,10 +1826,10 @@ function SlotRowEditor({ slot, slotDef, onChange, onDelete, onDone }) {
     <div style={{ ...card, marginBottom: 4, padding: "8px 10px", border: "1px solid #C81E3A" }}>
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
         <select value={draft.exercise} onChange={(e) => set({ exercise: e.target.value })}
-          style={{ ...input, padding: "5px 8px", fontSize: 14, flex: 1, minWidth: 0 }}>
+          style={{ ...input, padding: "5px 8px", fontSize: px(14), flex: 1, minWidth: 0 }}>
           {(slotDef?.options || [draft.exercise]).map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
-        <button onClick={onDone} style={{ background: "none", border: "none", color: "#C81E3A", cursor: "pointer", padding: 4 }}><Check size={17} /></button>
+        <button onClick={onDone} style={{ background: "none", border: "none", color: "#C81E3A", cursor: "pointer", padding: 4 }}><Check size={px(17)} /></button>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr", gap: 5, marginTop: 6 }}>
@@ -1860,7 +1874,7 @@ function SlotRowEditor({ slot, slotDef, onChange, onDelete, onDone }) {
       <div style={{ display: "flex", gap: 5, marginTop: 6 }}>
         {!slotDef?.isPreagotamiento && !draft.timeBased && (
           <select value={draft.protocol} onChange={(e) => set({ protocol: e.target.value })}
-            style={{ ...input, padding: "5px 8px", fontSize: 12, flex: 1, minWidth: 0 }}>
+            style={{ ...input, padding: "5px 8px", fontSize: px(12), flex: 1, minWidth: 0 }}>
             <option value="fallo">{tx(PROTOCOLS.fallo.label)}</option>
             <option value="rest_pause">{tx("Rest-pause")}</option>
             <option value="negativas">{tx("Negatives")}</option>
@@ -1869,7 +1883,7 @@ function SlotRowEditor({ slot, slotDef, onChange, onDelete, onDone }) {
         )}
         <input value={draft.note || ""} placeholder={t("note")}
           onChange={(e) => set({ note: e.target.value })}
-          style={{ ...input, padding: "5px 8px", fontSize: 12, flex: 1, minWidth: 0 }} />
+          style={{ ...input, padding: "5px 8px", fontSize: px(12), flex: 1, minWidth: 0 }} />
       </div>
     </div>
   );
@@ -1885,18 +1899,18 @@ function RoutineView({ routineKey, config, workouts, level, inline, suggested, o
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
           {/* Embedded in a card on desktop there is nothing to go back from. */}
           {!inline && (
-            <button onClick={onBack} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer", alignSelf: "center" }}><X size={20} /></button>
+            <button onClick={onBack} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer", alignSelf: "center" }}><X size={px(20)} /></button>
           )}
-          <span className="disp" style={{ fontSize: 18, textTransform: "uppercase" }}>{t("day")} {routineKey}</span>
+          <span className="disp" style={{ fontSize: px(18), textTransform: "uppercase" }}>{t("day")} {routineKey}</span>
           {inline && (
-            <span className="disp" style={{ fontSize: 12, fontWeight: 700, color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx(base.label)}</span>
+            <span className="disp" style={{ fontSize: px(12), fontWeight: 700, color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx(base.label)}</span>
           )}
         </div>
         {suggested && (
-          <span className="mono" style={{ fontSize: 9, color: "#C81E3A", border: "1px solid #C81E3A", padding: "1px 5px", letterSpacing: 0.5, flexShrink: 0, marginLeft: "auto", marginRight: 8 }}>{t("suggested")}</span>
+          <span className="mono" style={{ fontSize: px(9), color: "#C81E3A", border: "1px solid #C81E3A", padding: "1px 5px", letterSpacing: 0.5, flexShrink: 0, marginLeft: "auto", marginRight: 8 }}>{t("suggested")}</span>
         )}
         {!inline && (
-          <button onClick={onEdit} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer", flexShrink: 0 }}><Settings2 size={18} /></button>
+          <button onClick={onEdit} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer", flexShrink: 0 }}><Settings2 size={px(18)} /></button>
         )}
       </div>
 
@@ -1904,7 +1918,7 @@ function RoutineView({ routineKey, config, workouts, level, inline, suggested, o
       {groups.map((groupIds, gi) => (
         <div key={gi} style={{ ...card, marginBottom: inline ? 5 : 10, padding: inline ? "8px 10px" : "12px 14px", borderLeft: groupIds.length > 1 ? "3px solid #C81E3A" : undefined }}>
           {groupIds.length > 1 && (
-            <div className="mono" style={{ fontSize: 10, color: "#C81E3A", letterSpacing: 1, marginBottom: 10 }}>{t("superset")}</div>
+            <div className="mono" style={{ fontSize: px(10), color: "#C81E3A", letterSpacing: 1, marginBottom: 10 }}>{t("superset")}</div>
           )}
           {groupIds.map((slotId, si) => {
             const slot = config.find((s) => s.slotId === slotId);
@@ -1922,11 +1936,11 @@ function RoutineView({ routineKey, config, workouts, level, inline, suggested, o
                 <div key={slotId} onClick={() => setOpenSlot(slotId)}
                   style={{ paddingTop: si > 0 ? 7 : 0, marginTop: si > 0 ? 7 : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none", cursor: "pointer" }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
-                    <span className="disp" style={{ fontSize: 15, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "42%" }}>{slot.exercise}</span>
-                    <span className="mono" style={{ fontSize: 12, color: "#E8E6E1", marginLeft: "auto", whiteSpace: "nowrap" }}><MetaRow slot={slot} /></span>
+                    <span className="disp" style={{ fontSize: px(15), flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "42%" }}>{slot.exercise}</span>
+                    <span className="mono" style={{ fontSize: px(12), color: "#E8E6E1", marginLeft: "auto", whiteSpace: "nowrap" }}><MetaRow slot={slot} /></span>
                   </div>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0, marginTop: 1 }}>
-                    <span className="mono" style={{ fontSize: 10, color: "#8A8D93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span className="mono" style={{ fontSize: px(10), color: "#8A8D93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {tx(slotDef?.name)}{slot.note ? ` · ${slot.note}` : ""} · <span style={{ color: "#C81E3A" }}>{slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)}</span>
                     </span>
                     <span style={{ marginLeft: "auto", flexShrink: 0 }}>
@@ -1936,11 +1950,11 @@ function RoutineView({ routineKey, config, workouts, level, inline, suggested, o
                 </div>
               ) : (
               <div key={slotId} style={{ paddingTop: si > 0 ? 10 : 0, marginTop: si > 0 ? 10 : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none" }}>
-                <div className="disp" style={{ fontSize: 15 }}>{slot.exercise}</div>
-                <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginTop: 2 }}>{tx(slotDef?.name)}{slot.note ? ` · ${slot.note}` : ""}</div>
+                <div className="disp" style={{ fontSize: px(15) }}>{slot.exercise}</div>
+                <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", marginTop: 2 }}>{tx(slotDef?.name)}{slot.note ? ` · ${slot.note}` : ""}</div>
                 <div style={{ marginTop: 8 }}>
-                  <span className="mono" style={{ fontSize: 11, color: "#C81E3A" }}>{slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)}</span>
-                  <div className="mono" style={{ fontSize: 12, color: "#E8E6E1", marginTop: 4 }}>{t("target")}: <MetaRow slot={slot} /></div>
+                  <span className="mono" style={{ fontSize: px(11), color: "#C81E3A" }}>{slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)}</span>
+                  <div className="mono" style={{ fontSize: px(12), color: "#E8E6E1", marginTop: 4 }}>{t("target")}: <MetaRow slot={slot} /></div>
                   <PrevRecordLine workouts={workouts} routineKey={routineKey} slotId={slotId} />
                 </div>
               </div>
@@ -1952,7 +1966,7 @@ function RoutineView({ routineKey, config, workouts, level, inline, suggested, o
       </div>
 
       <button onClick={onLog} style={{ ...btnPrimary, width: "100%", marginTop: inline ? 8 : 6, flexShrink: 0, padding: inline ? "9px 20px" : "12px 20px" }}>
-        <Plus size={16} /> {t("logSession")}
+        <Plus size={px(16)} /> {t("logSession")}
       </button>
     </div>
   );
@@ -1973,21 +1987,21 @@ function RoutineEdit({ routineKey, config, level, onCancel, onSave }) {
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-        <button onClick={onCancel} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={20} /></button>
-        <span className="disp" style={{ fontSize: 18, textTransform: "uppercase" }}>Edit Day {routineKey}</span>
+        <button onClick={onCancel} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={px(20)} /></button>
+        <span className="disp" style={{ fontSize: px(18), textTransform: "uppercase" }}>Edit Day {routineKey}</span>
       </div>
 
       {groups.map((groupIds, gi) => (
         <div key={gi} style={{ ...card, marginBottom: 12, borderLeft: groupIds.length > 1 ? "3px solid #C81E3A" : undefined }}>
           {groupIds.length > 1 && (
-            <div className="mono" style={{ fontSize: 10, color: "#C81E3A", letterSpacing: 1, marginBottom: 10 }}>{t("superset")}</div>
+            <div className="mono" style={{ fontSize: px(10), color: "#C81E3A", letterSpacing: 1, marginBottom: 10 }}>{t("superset")}</div>
           )}
           {groupIds.map((slotId, si) => {
             const slotDef = base.slots.find((s) => s.id === slotId);
             const i = idxOf(slotId);
             return (
               <div key={slotId} style={{ paddingTop: si > 0 ? 12 : 0, marginTop: si > 0 ? 12 : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none" }}>
-                <div className="disp" style={{ fontSize: 14, textTransform: "uppercase", marginBottom: 8 }}>{tx(slotDef.name)}</div>
+                <div className="disp" style={{ fontSize: px(14), textTransform: "uppercase", marginBottom: 8 }}>{tx(slotDef.name)}</div>
                 <select value={slots[i].exercise} onChange={(e) => update(i, "exercise", e.target.value)} style={{ ...input, marginBottom: 8 }}>
                   {slotDef.options.map((o) => <option key={o} value={o}>{o}</option>)}
                 </select>
@@ -1996,12 +2010,12 @@ function RoutineEdit({ routineKey, config, level, onCancel, onSave }) {
 
                 {slotDef.isTimeBased ? (
                   <>
-                    <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginBottom: 8 }}>{t("holdToFailure")}</div>
+                    <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", marginBottom: 8 }}>{t("holdToFailure")}</div>
                     <input type="number" placeholder={t("phTargetSeconds")} value={slots[i].targetSeconds} onChange={(e) => update(i, "targetSeconds", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, marginBottom: 8 }} />
                   </>
                 ) : slotDef.isPreagotamiento ? (
                   <>
-                    <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginBottom: 8 }}>{tx(PROTOCOLS.fallo.desc)}</div>
+                    <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", marginBottom: 8 }}>{tx(PROTOCOLS.fallo.desc)}</div>
                     <input type="number" placeholder={t("phTargetReps")} value={slots[i].targetReps} onChange={(e) => update(i, "targetReps", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, marginBottom: 8 }} />
                   </>
                 ) : (
@@ -2048,7 +2062,7 @@ function RoutineEdit({ routineKey, config, level, onCancel, onSave }) {
         }));
         onSave(routineKey, sanitized);
       }} style={{ ...btnPrimary, width: "100%", marginTop: 6 }}>
-        <Check size={16} /> {t("saveDay")}
+        <Check size={px(16)} /> {t("saveDay")}
       </button>
     </div>
   );
@@ -2078,25 +2092,25 @@ function LogSession({ routineKey, config, workouts, level, onCancel, onFinish })
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-        <button onClick={onCancel} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={20} /></button>
+        <button onClick={onCancel} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={px(20)} /></button>
         <div>
-          <span className="disp" style={{ fontSize: 18, textTransform: "uppercase" }}>Day {routineKey}</span>
-          <div className="disp" style={{ fontSize: 13, fontWeight: 700, color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.6, marginTop: 1 }}>{tx(base.label)}</div>
+          <span className="disp" style={{ fontSize: px(18), textTransform: "uppercase" }}>Day {routineKey}</span>
+          <div className="disp" style={{ fontSize: px(13), fontWeight: 700, color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.6, marginTop: 1 }}>{tx(base.label)}</div>
         </div>
       </div>
 
       {groups.map((groupIds, gi) => (
         <div key={gi} style={{ ...card, marginBottom: 12, borderLeft: groupIds.length > 1 ? "3px solid #C81E3A" : undefined }}>
           {groupIds.length > 1 && (
-            <div className="mono" style={{ fontSize: 10, color: "#C81E3A", letterSpacing: 1, marginBottom: 10 }}>{t("superset")}</div>
+            <div className="mono" style={{ fontSize: px(10), color: "#C81E3A", letterSpacing: 1, marginBottom: 10 }}>{t("superset")}</div>
           )}
           {groupIds.map((slotId, si) => {
             const i = config.findIndex((s) => s.slotId === slotId);
             const slot = config[i];
             return (
               <div key={slotId} style={{ paddingTop: si > 0 ? 12 : 0, marginTop: si > 0 ? 12 : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none" }}>
-                <div className="disp" style={{ fontSize: 14, marginBottom: 2 }}>{slot.exercise}</div>
-                <div className="mono" style={{ fontSize: 11, color: "#C81E3A", marginBottom: 4 }}>
+                <div className="disp" style={{ fontSize: px(14), marginBottom: 2 }}>{slot.exercise}</div>
+                <div className="mono" style={{ fontSize: px(11), color: "#C81E3A", marginBottom: 4 }}>
                   {slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)} · target <MetaRow slot={slot} />{slot.note ? ` · ${slot.note}` : ""}
                 </div>
                 <PrevRecordLine workouts={workouts} routineKey={routineKey} slotId={slotId} />
@@ -2133,7 +2147,7 @@ function LogSession({ routineKey, config, workouts, level, onCancel, onFinish })
         }));
         onFinish(routineKey, cleaned);
       }} style={{ ...btnPrimary, width: "100%", marginTop: 6 }}>
-        <Check size={16} /> SAVE SESSION
+        <Check size={px(16)} /> SAVE SESSION
       </button>
     </div>
   );
@@ -2187,27 +2201,27 @@ function Food({ mealPlans, setMealPlans }) {
           <button key={key} onClick={() => setOpenPlan(key)} className={isWide ? undefined : "grow"}
             style={{ ...card, padding: "10px 12px", marginBottom: isWide ? 0 : 8, width: "100%", textAlign: "left", cursor: "pointer", display: "block" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span className="disp" style={{ fontSize: 16, fontWeight: 700, textTransform: "uppercase" }}>{t("meal")} {key}{plan.label ? <span className="mono" style={{ fontSize: 11, color: "#8A8D93", textTransform: "none", fontWeight: 400 }}> · {plan.label}</span> : null}</span>
-              <ChevronRight size={16} color="#8A8D93" style={{ flexShrink: 0 }} />
+              <span className="disp" style={{ fontSize: px(16), fontWeight: 700, textTransform: "uppercase" }}>{t("meal")} {key}{plan.label ? <span className="mono" style={{ fontSize: px(11), color: "#8A8D93", textTransform: "none", fontWeight: 400 }}> · {plan.label}</span> : null}</span>
+              <ChevronRight size={px(16)} color="#8A8D93" style={{ flexShrink: 0 }} />
             </div>
             {(plan.items || []).length === 0 ? (
-              <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginTop: 6 }}>{t("noFoodsLogged")}</div>
+              <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", marginTop: 6 }}>{t("noFoodsLogged")}</div>
             ) : (
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: 5, gap: 10 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {(plan.items || []).map((it) => (
-                    <div key={it.id} className="mono" style={{ fontSize: 11, color: "#8A8D93", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <div key={it.id} className="mono" style={{ fontSize: px(11), color: "#8A8D93", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       • {it.name}{it.amount ? ` ${it.amount}` : ""}
                     </div>
                   ))}
                 </div>
                 <div style={{ flexShrink: 0, textAlign: "left" }}>
-                  <div className="mono" style={{ fontSize: 13, color: "#C81E3A", fontWeight: 600 }}>{Math.round(tot.kcal)} kcal</div>
-                  <div className="mono" style={{ fontSize: 12, color: "#8A8D93", marginTop: 4, display: "grid", gridTemplateColumns: "46px auto", rowGap: 2 }}>
-                    <span><span style={{ display: "inline-block", width: 16 }}>C</span>{n1(tot.carbs)}</span>
-                    <span><span style={{ display: "inline-block", width: 16 }}>P</span>{n1(tot.protein)}</span>
-                    <span><span style={{ display: "inline-block", width: 16 }}>F</span>{n1(tot.fat)}</span>
-                    <span><span style={{ display: "inline-block", width: 16, color: "#C81E3A" }}>F</span>{n1(tot.fiber)}</span>
+                  <div className="mono" style={{ fontSize: px(13), color: "#C81E3A", fontWeight: 600 }}>{Math.round(tot.kcal)} kcal</div>
+                  <div className="mono" style={{ fontSize: px(12), color: "#8A8D93", marginTop: 4, display: "grid", gridTemplateColumns: "46px auto", rowGap: 2 }}>
+                    <span><span style={{ display: "inline-block", width: px(16) }}>C</span>{n1(tot.carbs)}</span>
+                    <span><span style={{ display: "inline-block", width: px(16) }}>P</span>{n1(tot.protein)}</span>
+                    <span><span style={{ display: "inline-block", width: px(16) }}>F</span>{n1(tot.fat)}</span>
+                    <span><span style={{ display: "inline-block", width: px(16), color: "#C81E3A" }}>F</span>{n1(tot.fiber)}</span>
                   </div>
                 </div>
               </div>
@@ -2223,32 +2237,32 @@ function Food({ mealPlans, setMealPlans }) {
         {!isWide && <SectionLabel>{t("dailyTotal")}</SectionLabel>}
         <div style={{ ...card, padding: isWide ? "10px 16px" : 14, position: "relative" }}>
           {isWide && (
-            <div className="disp" style={{ position: "absolute", top: 10, left: 16, fontSize: 11, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1 }}>{t("dailyTotal")}</div>
+            <div className="disp" style={{ position: "absolute", top: 10, left: 16, fontSize: px(11), color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1 }}>{t("dailyTotal")}</div>
           )}
           <div style={{ textAlign: "center", marginBottom: isWide ? 6 : 10 }}>
-            <div className="mono" style={{ fontSize: 30, fontWeight: 600, color: "#C81E3A" }}>{Math.round(dayTotals.kcal)}</div>
-            <div className="disp" style={{ fontSize: 11, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1 }}>{t("totalKcal")}</div>
+            <div className="mono" style={{ fontSize: px(30), fontWeight: 600, color: "#C81E3A" }}>{Math.round(dayTotals.kcal)}</div>
+            <div className="disp" style={{ fontSize: px(11), color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1 }}>{t("totalKcal")}</div>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", textAlign: "center" }}>
             <div style={{ flex: 1 }}>
-              <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: "#E8E6E1" }}>{n1(dayTotals.carbs)}g</div>
-              <div className="mono" style={{ fontSize: 13, color: "#C81E3A", marginTop: 3, fontWeight: 600 }}>{dayTotals.kcal ? Math.round((dayTotals.carbs * 4 / dayTotals.kcal) * 100) : 0}%</div>
-              <div className="disp" style={{ fontSize: 9, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("carbs")}</div>
+              <div className="mono" style={{ fontSize: px(20), fontWeight: 600, color: "#E8E6E1" }}>{n1(dayTotals.carbs)}g</div>
+              <div className="mono" style={{ fontSize: px(13), color: "#C81E3A", marginTop: 3, fontWeight: 600 }}>{dayTotals.kcal ? Math.round((dayTotals.carbs * 4 / dayTotals.kcal) * 100) : 0}%</div>
+              <div className="disp" style={{ fontSize: px(9), color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("carbs")}</div>
             </div>
             <div style={{ flex: 1 }}>
-              <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: "#E8E6E1" }}>{n1(dayTotals.protein)}g</div>
-              <div className="mono" style={{ fontSize: 13, color: "#C81E3A", marginTop: 3, fontWeight: 600 }}>{dayTotals.kcal ? Math.round((dayTotals.protein * 4 / dayTotals.kcal) * 100) : 0}%</div>
-              <div className="disp" style={{ fontSize: 9, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("protein")}</div>
+              <div className="mono" style={{ fontSize: px(20), fontWeight: 600, color: "#E8E6E1" }}>{n1(dayTotals.protein)}g</div>
+              <div className="mono" style={{ fontSize: px(13), color: "#C81E3A", marginTop: 3, fontWeight: 600 }}>{dayTotals.kcal ? Math.round((dayTotals.protein * 4 / dayTotals.kcal) * 100) : 0}%</div>
+              <div className="disp" style={{ fontSize: px(9), color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("protein")}</div>
             </div>
             <div style={{ flex: 1 }}>
-              <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: "#E8E6E1" }}>{n1(dayTotals.fat)}g</div>
-              <div className="mono" style={{ fontSize: 13, color: "#C81E3A", marginTop: 3, fontWeight: 600 }}>{dayTotals.kcal ? Math.round((dayTotals.fat * 9 / dayTotals.kcal) * 100) : 0}%</div>
-              <div className="disp" style={{ fontSize: 9, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("fat")}</div>
+              <div className="mono" style={{ fontSize: px(20), fontWeight: 600, color: "#E8E6E1" }}>{n1(dayTotals.fat)}g</div>
+              <div className="mono" style={{ fontSize: px(13), color: "#C81E3A", marginTop: 3, fontWeight: 600 }}>{dayTotals.kcal ? Math.round((dayTotals.fat * 9 / dayTotals.kcal) * 100) : 0}%</div>
+              <div className="disp" style={{ fontSize: px(9), color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("fat")}</div>
             </div>
             <div style={{ flex: 1 }}>
-              <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: "#E8E6E1" }}>{n1(dayTotals.fiber)}g</div>
-              <div style={{ fontSize: 13, marginTop: 3 }}>&nbsp;</div>
-              <div className="disp" style={{ fontSize: 9, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("fiber")}</div>
+              <div className="mono" style={{ fontSize: px(20), fontWeight: 600, color: "#E8E6E1" }}>{n1(dayTotals.fiber)}g</div>
+              <div style={{ fontSize: px(13), marginTop: 3 }}>&nbsp;</div>
+              <div className="disp" style={{ fontSize: px(9), color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("fiber")}</div>
             </div>
           </div>
         </div>
@@ -2340,20 +2354,20 @@ function FoodRowEditor({ item, compact, onChange, onDelete, onDone }) {
           value={query || draft.name}
           placeholder={t("phFood")}
           onChange={(e) => { setQuery(e.target.value); commit({ name: e.target.value }); }}
-          style={{ ...input, padding: "5px 8px", fontSize: 14, flex: compact ? "1 0 100%" : 1, minWidth: 0, marginBottom: compact ? 6 : 0 }}
+          style={{ ...input, padding: "5px 8px", fontSize: px(14), flex: compact ? "1 0 100%" : 1, minWidth: 0, marginBottom: compact ? 6 : 0 }}
         />
         {/* The field holds the number only; the unit is shown next to it. */}
-        <div style={{ position: "relative", width: compact ? 110 : 86, flexShrink: 0 }}>
+        <div style={{ position: "relative", width: compact ? 110 : px(86), flexShrink: 0 }}>
           <input
             type="number"
             className="mono"
             value={qty}
             placeholder={t("amount")}
             onChange={(e) => onQty(e.target.value)}
-            style={{ ...input, padding: "5px 24px 5px 8px", fontSize: 13, width: "100%" }}
+            style={{ ...input, padding: "5px 24px 5px 8px", fontSize: px(13), width: "100%" }}
           />
           {unit && (
-            <span className="mono" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "#8A8D93", pointerEvents: "none" }}>{unit}</span>
+            <span className="mono" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: px(11), color: "#8A8D93", pointerEvents: "none" }}>{unit}</span>
           )}
         </div>
         <button onClick={onDone} style={{ background: "none", border: "none", color: "#C81E3A", cursor: "pointer", padding: compact ? 8 : 4, marginLeft: compact ? "auto" : 0 }}><Check size={compact ? 20 : 17} /></button>
@@ -2366,8 +2380,8 @@ function FoodRowEditor({ item, compact, onChange, onDelete, onDone }) {
               <button key={f.n} onClick={() => pick(f)}
                 style={{ display: "block", width: "100%", textAlign: "left", background: "none",
                          border: "none", borderBottom: "1px solid #2A2D33", padding: "7px 10px", cursor: "pointer" }}>
-                <div className="disp" style={{ fontSize: 13 }}>{foodLabel(f)}</div>
-                <div className="mono" style={{ fontSize: 10, color: "#8A8D93", marginTop: 1 }}>
+                <div className="disp" style={{ fontSize: px(13) }}>{foodLabel(f)}</div>
+                <div className="mono" style={{ fontSize: px(10), color: "#8A8D93", marginTop: 1 }}>
                   {f.k} kcal · C {f.c} · P {f.p} · F {f.f} — {f.u === "u" ? t("perUnit") : t("per100")}
                 </div>
               </button>
@@ -2419,7 +2433,7 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
     <div className={inline ? "inline-card" : undefined}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: inline ? 7 : 12, flexShrink: 0 }}>
         {!inline && (
-          <button onClick={onBack} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={20} /></button>
+          <button onClick={onBack} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={px(20)} /></button>
         )}
         <span className="disp" style={{ fontSize: inline ? 17 : 18, textTransform: "uppercase", flexShrink: 0 }}>{t("meal")} {planKey}</span>
         <input
@@ -2428,16 +2442,16 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
           onChange={(e) => setLabel(e.target.value)}
           onBlur={() => persist(items, label)}
           className="disp"
-          style={{ background: "none", border: "none", color: "#8A8D93", fontSize: 14, flex: 1, minWidth: 0, padding: 0, outline: "none" }}
+          style={{ background: "none", border: "none", color: "#8A8D93", fontSize: px(14), flex: 1, minWidth: 0, padding: 0, outline: "none" }}
         />
         <button onClick={addBlankItem} title={t("addFood")}
           style={{ background: "none", border: "1px solid #3A3F47", color: "#8A8D93", cursor: "pointer", padding: "3px 8px", display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
-          <Plus size={15} /><span className="disp" style={{ fontSize: 11, textTransform: "uppercase" }}>{t("add")}</span>
+          <Plus size={px(15)} /><span className="disp" style={{ fontSize: px(11), textTransform: "uppercase" }}>{t("add")}</span>
         </button>
       </div>
 
       <div className={inline ? "inline-scroll" : undefined}>
-        {items.length === 0 && <p className="mono" style={{ color: "#8A8D93", fontSize: 12 }}>{t("noFoodsYet")}</p>}
+        {items.length === 0 && <p className="mono" style={{ color: "#8A8D93", fontSize: px(12) }}>{t("noFoodsYet")}</p>}
         {items.map((m) => (
           openRow === m.id ? (
             <FoodRowEditor
@@ -2451,24 +2465,24 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
               style={{ ...card, marginBottom: inline ? 3 : 6, padding: inline ? "5px 10px" : "9px 12px", cursor: "pointer" }}>
               {inline ? (
                 <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
-                  <span className="disp" style={{ fontSize: 15, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "45%", color: m.name ? undefined : "#8A8D93" }}>
+                  <span className="disp" style={{ fontSize: px(15), flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "45%", color: m.name ? undefined : "#8A8D93" }}>
                     {m.name || t("phFood")}
-                    {m.amount ? <span className="mono" style={{ fontSize: 12, color: "#8A8D93" }}> · {m.amount}</span> : ""}
+                    {m.amount ? <span className="mono" style={{ fontSize: px(12), color: "#8A8D93" }}> · {m.amount}</span> : ""}
                   </span>
                   {m.calories > 0 && (
-                    <span className="mono" style={{ fontSize: 13, color: "#8A8D93", whiteSpace: "nowrap", marginLeft: "auto" }}>
+                    <span className="mono" style={{ fontSize: px(13), color: "#8A8D93", whiteSpace: "nowrap", marginLeft: "auto" }}>
                       {Math.round(m.calories)} kcal · C {n1(m.carbs)} · P {n1(m.protein)} · F {n1(m.fat)} · Fb {n1(m.fiber)}
                     </span>
                   )}
                 </div>
               ) : (
                 <>
-                  <div className="disp" style={{ fontSize: 14, color: m.name ? undefined : "#8A8D93" }}>
+                  <div className="disp" style={{ fontSize: px(14), color: m.name ? undefined : "#8A8D93" }}>
                     {m.name || t("phFood")}
-                    {m.amount ? <span className="mono" style={{ fontSize: 12, color: "#8A8D93" }}> · {m.amount}</span> : ""}
+                    {m.amount ? <span className="mono" style={{ fontSize: px(12), color: "#8A8D93" }}> · {m.amount}</span> : ""}
                   </div>
                   {m.calories > 0 && (
-                    <div className="mono" style={{ fontSize: 12, color: "#8A8D93", marginTop: 2 }}>
+                    <div className="mono" style={{ fontSize: px(12), color: "#8A8D93", marginTop: 2 }}>
                       {Math.round(m.calories)} kcal · C {n1(m.carbs)}g · P {n1(m.protein)}g · F {n1(m.fat)}g · Fb {n1(m.fiber)}g
                     </div>
                   )}
@@ -2483,9 +2497,9 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
           list down for a figure that only makes sense after reading it. */}
       <div className="mono" style={{
         marginTop: inline ? 7 : 10, paddingTop: inline ? 7 : 9, borderTop: "1px solid #2A2D33", flexShrink: 0,
-        display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap", fontSize: 14,
+        display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap", fontSize: px(14),
       }}>
-        <span style={{ fontSize: 17, fontWeight: 600, color: "#C81E3A" }}>{Math.round(totals.kcal)} kcal</span>
+        <span style={{ fontSize: px(17), fontWeight: 600, color: "#C81E3A" }}>{Math.round(totals.kcal)} kcal</span>
         <span style={{ color: "#E8E6E1" }}><span style={{ color: "#8A8D93" }}>C </span>{n1(totals.carbs)}g</span>
         <span style={{ color: "#E8E6E1" }}><span style={{ color: "#8A8D93" }}>P </span>{n1(totals.protein)}g</span>
         <span style={{ color: "#E8E6E1" }}><span style={{ color: "#8A8D93" }}>F </span>{n1(totals.fat)}g</span>
@@ -2511,7 +2525,7 @@ function Progress({ workouts, bodystats, setBodystats }) {
 
 function SubTab({ label, active, onClick }) {
   return (
-    <button onClick={onClick} style={{ flex: 1, background: active ? "#C81E3A" : "#1E2126", color: active ? "#fff" : "#8A8D93", border: "1px solid " + (active ? "#C81E3A" : "#2A2D33"), padding: "9px 6px", fontFamily: "'Oswald', sans-serif", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, cursor: "pointer" }}>
+    <button onClick={onClick} style={{ flex: 1, background: active ? "#C81E3A" : "#1E2126", color: active ? "#fff" : "#8A8D93", border: "1px solid " + (active ? "#C81E3A" : "#2A2D33"), padding: "9px 6px", fontFamily: "'Oswald', sans-serif", fontSize: px(11), textTransform: "uppercase", letterSpacing: 0.5, cursor: "pointer" }}>
       {label}
     </button>
   );
@@ -2544,7 +2558,7 @@ function BodyComposition({ bodystats, setBodystats }) {
           <input type="number" placeholder={t("phWeightKg")} value={weight} onChange={(e) => setWeight(e.target.value)} style={{ ...input, flex: 1 }} />
           <input type="number" placeholder={t("bodyFat")} value={bodyFat} onChange={(e) => setBodyFat(e.target.value)} style={{ ...input, flex: 1 }} />
         </div>
-        <button onClick={addEntry} style={{ ...btnPrimary, width: "100%", marginTop: 10 }}><Plus size={16} /> {t("logMeasurement")}</button>
+        <button onClick={addEntry} style={{ ...btnPrimary, width: "100%", marginTop: 10 }}><Plus size={px(16)} /> {t("logMeasurement")}</button>
       </div>
 
       {latestCalc && (
@@ -2556,19 +2570,19 @@ function BodyComposition({ bodystats, setBodystats }) {
 
       {ffmiData.length >= 2 && CHARTS_OK ? (
         <div style={{ ...card, padding: "18px 8px 8px", marginTop: 16 }}>
-          <div className="mono" style={{ fontSize: 11, color: "#8A8D93", padding: "0 8px 8px" }}>{t("bodyWeightKg")}</div>
+          <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", padding: "0 8px 8px" }}>{t("bodyWeightKg")}</div>
           <ResponsiveContainer width="100%" height={180}>
             <LineChart data={ffmiData}>
               <CartesianGrid stroke="#2A2D33" vertical={false} />
               <XAxis dataKey="label" stroke="#8A8D93" fontSize={10} />
               <YAxis stroke="#8A8D93" fontSize={10} domain={["dataMin - 2", "dataMax + 2"]} />
-              <Tooltip contentStyle={{ background: "#1E2126", border: "1px solid #2A2D33", fontSize: 12 }} labelStyle={{ color: "#E8E6E1" }} />
+              <Tooltip contentStyle={{ background: "#1E2126", border: "1px solid #2A2D33", fontSize: px(12) }} labelStyle={{ color: "#E8E6E1" }} />
               <Line type="monotone" dataKey="weight" stroke="#C81E3A" strokeWidth={2} dot={{ fill: "#C81E3A", r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       ) : (
-        <p className="mono" style={{ color: "#8A8D93", fontSize: 12, textAlign: "center", padding: 24 }}>{t("needTwoMeasurements")}</p>
+        <p className="mono" style={{ color: "#8A8D93", fontSize: px(12), textAlign: "center", padding: 24 }}>{t("needTwoMeasurements")}</p>
       )}
 
       {ffmiData.length > 0 && (
@@ -2576,11 +2590,11 @@ function BodyComposition({ bodystats, setBodystats }) {
           <SectionLabel>{t("measurementHistory")}</SectionLabel>
           {ffmiData.slice().reverse().map((b) => (
             <div key={b.id} style={{ ...card, marginBottom: 8, padding: "12px 14px" }}>
-              <div className="mono" style={{ fontSize: 11, color: "#8A8D93" }}>{fmtDate(b.date)}</div>
+              <div className="mono" style={{ fontSize: px(11), color: "#8A8D93" }}>{fmtDate(b.date)}</div>
               {/* Weight sits in the same grid as the other figures: on its own
                   line it read as belonging to the date rather than the data.
                   Fixed columns keep values lined up despite varying decimals. */}
-              <div className="mono" style={{ fontSize: 12, color: "#E8E6E1", marginTop: 5, display: "grid", gridTemplateColumns: "1fr 1fr", rowGap: 3, columnGap: 6 }}>
+              <div className="mono" style={{ fontSize: px(12), color: "#E8E6E1", marginTop: 5, display: "grid", gridTemplateColumns: "1fr 1fr", rowGap: 3, columnGap: 6 }}>
                 <span style={{ color: "#C81E3A" }}><span style={{ color: "#8A8D93" }}>{t("weight")} </span>{b.weight}kg</span>
                 <span><span style={{ color: "#8A8D93" }}>{t("fatShort")} </span>{b.bodyFat}%</span>
                 <span><span style={{ color: "#8A8D93" }}>{t("leanShort")} </span>{b.lean}kg</span>
@@ -2597,8 +2611,8 @@ function BodyComposition({ bodystats, setBodystats }) {
 function StatCard({ value, label }) {
   return (
     <div style={{ ...card, flex: 1, textAlign: "center", padding: 16 }}>
-      <div className="mono" style={{ fontSize: 24, fontWeight: 600, color: "#C81E3A" }}>{value}</div>
-      <div className="disp" style={{ fontSize: 10, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+      <div className="mono" style={{ fontSize: px(24), fontWeight: 600, color: "#C81E3A" }}>{value}</div>
+      <div className="disp" style={{ fontSize: px(10), color: "#8A8D93", textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
     </div>
   );
 }
@@ -2629,7 +2643,7 @@ function Performance({ workouts }) {
     return pts;
   }, [workouts, exercise]);
 
-  if (allExercises.length === 0) return <p className="mono" style={{ color: "#8A8D93", fontSize: 12, textAlign: "center", padding: 30 }}>{t("logFirst")}</p>;
+  if (allExercises.length === 0) return <p className="mono" style={{ color: "#8A8D93", fontSize: px(12), textAlign: "center", padding: 30 }}>{t("logFirst")}</p>;
 
   const isTimeBased = points.length > 0 && points[0].timeBased;
   const unit = points.length > 0 ? points[0].weightUnit : "kg";
@@ -2641,19 +2655,19 @@ function Performance({ workouts }) {
       </select>
       {points.length >= 2 && CHARTS_OK ? (
         <div style={{ ...card, padding: "18px 8px 8px" }}>
-          <div className="mono" style={{ fontSize: 11, color: "#8A8D93", padding: "0 8px 8px" }}>{isTimeBased ? t("secondsHeld") : `${t("theoretical1RM")} (${unit.toUpperCase()})`}</div>
+          <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", padding: "0 8px 8px" }}>{isTimeBased ? t("secondsHeld") : `${t("theoretical1RM")} (${unit.toUpperCase()})`}</div>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={points}>
               <CartesianGrid stroke="#2A2D33" vertical={false} />
               <XAxis dataKey="label" stroke="#8A8D93" fontSize={10} />
               <YAxis stroke="#8A8D93" fontSize={10} domain={["dataMin - 5", "dataMax + 5"]} />
-              <Tooltip contentStyle={{ background: "#1E2126", border: "1px solid #2A2D33", fontSize: 12 }} labelStyle={{ color: "#E8E6E1" }} formatter={(v, n) => n === "oneRM" ? [`${v} ${unit}`, "Theoretical 1RM"] : n === "seconds" ? [`${v}s`, "Seconds"] : [v, n]} />
+              <Tooltip contentStyle={{ background: "#1E2126", border: "1px solid #2A2D33", fontSize: px(12) }} labelStyle={{ color: "#E8E6E1" }} formatter={(v, n) => n === "oneRM" ? [`${v} ${unit}`, "Theoretical 1RM"] : n === "seconds" ? [`${v}s`, "Seconds"] : [v, n]} />
               <Line type="monotone" dataKey={isTimeBased ? "seconds" : "oneRM"} stroke="#C81E3A" strokeWidth={2} dot={{ fill: "#C81E3A", r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       ) : (
-        <p className="mono" style={{ color: "#8A8D93", fontSize: 12, textAlign: "center", padding: 24 }}>{t("needTwoSessions")}</p>
+        <p className="mono" style={{ color: "#8A8D93", fontSize: px(12), textAlign: "center", padding: 24 }}>{t("needTwoSessions")}</p>
       )}
 
       {points.length > 0 && (
@@ -2662,10 +2676,10 @@ function Performance({ workouts }) {
           {points.slice().reverse().map((p, i) => (
             <div key={i} style={{ ...card, marginBottom: 8, padding: "12px 14px" }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span className="mono" style={{ fontSize: 11, color: "#8A8D93" }}>{fmtDateTime(p.date)}</span>
-                <span className="mono" style={{ fontSize: 12, color: "#C81E3A" }}>{p.timeBased ? `${p.seconds}s` : `1RM ${p.oneRM}${p.weightUnit}`}</span>
+                <span className="mono" style={{ fontSize: px(11), color: "#8A8D93" }}>{fmtDateTime(p.date)}</span>
+                <span className="mono" style={{ fontSize: px(12), color: "#C81E3A" }}>{p.timeBased ? `${p.seconds}s` : `1RM ${p.oneRM}${p.weightUnit}`}</span>
               </div>
-              <div className="mono" style={{ fontSize: 12, color: "#E8E6E1", marginTop: 4 }}>
+              <div className="mono" style={{ fontSize: px(12), color: "#E8E6E1", marginTop: 4 }}>
                 {p.weight}{p.weightUnit} · {p.timeBased
                   ? `${p.seconds}s (hold)`
                   : p.protocol === "rest_pause" && p.repsBreakdown
@@ -2690,7 +2704,7 @@ function Books({ notes, setNotes }) {
       <SectionLabel>{t("methodPrinciples")}</SectionLabel>
       {principles().map((p, i) => (
         <div key={i} style={{ ...card, marginBottom: 8, padding: "12px 14px" }}>
-          <p className="mono" style={{ fontSize: 12, color: "#E8E6E1", lineHeight: 1.6, margin: 0 }}>{p}</p>
+          <p className="mono" style={{ fontSize: px(12), color: "#E8E6E1", lineHeight: 1.6, margin: 0 }}>{p}</p>
         </div>
       ))}
 
@@ -2698,9 +2712,9 @@ function Books({ notes, setNotes }) {
         <SectionLabel>{t("recommended")}</SectionLabel>
         {books().map((b, i) => (
           <div key={i} style={{ ...card, marginBottom: 8 }}>
-            <div className="disp" style={{ fontSize: 14, textTransform: "uppercase" }}>{b.title}</div>
-            <div className="mono" style={{ fontSize: 11, color: "#C81E3A", margin: "2px 0 6px" }}>{b.author}</div>
-            <p className="mono" style={{ fontSize: 12, color: "#8A8D93", lineHeight: 1.5, margin: 0 }}>{b.note}</p>
+            <div className="disp" style={{ fontSize: px(14), textTransform: "uppercase" }}>{b.title}</div>
+            <div className="mono" style={{ fontSize: px(11), color: "#C81E3A", margin: "2px 0 6px" }}>{b.author}</div>
+            <p className="mono" style={{ fontSize: px(12), color: "#8A8D93", lineHeight: 1.5, margin: 0 }}>{b.note}</p>
           </div>
         ))}
       </div>
@@ -2717,11 +2731,11 @@ function Books({ notes, setNotes }) {
 }
 
 function SectionLabel({ children }) {
-  return <div className="disp" style={{ fontSize: 13, letterSpacing: 1.5, color: "#8A8D93", textTransform: "uppercase", marginBottom: 12 }}>{children}</div>;
+  return <div className="disp" style={{ fontSize: px(13), letterSpacing: 1.5, color: "#8A8D93", textTransform: "uppercase", marginBottom: 12 }}>{children}</div>;
 }
 
 const card = { background: "#1E2126", border: "1px solid #2A2D33", padding: 14 };
-const input = { width: "100%", background: "#14161A", border: "1px solid #3A3F47", color: "#E8E6E1", padding: "10px 12px", fontSize: 14 };
+const input = { width: "100%", background: "#14161A", border: "1px solid #3A3F47", color: "#E8E6E1", padding: "10px 12px", fontSize: px(14) };
 const btnPrimary = { background: "#C81E3A", color: "#fff", border: "none", padding: "12px 20px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "'Oswald', sans-serif", fontWeight: 600, letterSpacing: 0.5, cursor: "pointer" };
 const btnGhost = { background: "none", color: "#8A8D93", border: "1px solid #3A3F47", padding: "12px 20px", fontFamily: "'Oswald', sans-serif", fontWeight: 600, letterSpacing: 0.5, cursor: "pointer" };
 
