@@ -2054,7 +2054,7 @@ function Food({ mealPlans, setMealPlans }) {
       <div className={isWide ? "wide-grid" : "fill-screen"}
         style={isWide ? undefined : { height: "calc(100dvh - var(--hd-header) - var(--hd-nav) - var(--hd-mainpad) - 28px)" }}>
       {isWide ? MEAL_KEYS.map((key) => (
-        <div key={key} style={{ ...card, padding: "14px 16px" }}>
+        <div key={key} style={{ ...card, padding: "10px 12px" }}>
           <MealPlanDetail
             planKey={key} plan={mealPlans[key] || { label: "", items: [] }}
             allPlans={mealPlans} setMealPlans={setMealPlans} inline
@@ -2271,13 +2271,13 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
 
   return (
     <div className={inline ? "meal-inline" : undefined}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: inline ? 7 : 14, flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {/* Embedded in a card on desktop there is nothing to go back from. */}
           {!inline && (
             <button onClick={onBack} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={20} /></button>
           )}
-          <span className="disp" style={{ fontSize: 18, textTransform: "uppercase" }}>{t("meal")} {planKey}</span>
+          <span className="disp" style={{ fontSize: inline ? 15 : 18, textTransform: "uppercase" }}>{t("meal")} {planKey}</span>
         </div>
         <button onClick={() => { setMode(mode === "view" ? "edit" : "view"); if (mode === "edit") cancelEdit(); }} style={{ background: "none", border: "none", color: mode === "edit" ? "#C81E3A" : "#8A8D93", cursor: "pointer" }}>
           {mode === "view" ? <Settings2 size={18} /> : <Check size={18} />}
@@ -2349,15 +2349,32 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
           <div
             key={m.id}
             onClick={() => { if (mode === "edit") { startEdit(m); } else { startQtyEdit(m); } }}
-            style={{ ...card, marginBottom: 8, padding: "12px 14px", cursor: "pointer", border: (editingId === m.id || qtyEditId === m.id) ? "1px solid #C81E3A" : card.border }}
+            style={{ ...card, marginBottom: inline ? 3 : 8, padding: inline ? "5px 10px" : "12px 14px", cursor: "pointer", border: (editingId === m.id || qtyEditId === m.id) ? "1px solid #C81E3A" : card.border }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div style={{ flex: 1 }}>
-                <div className="disp" style={{ fontSize: 14 }}>{m.name}{m.amount ? <span className="mono" style={{ fontSize: 12, color: "#8A8D93" }}> · {m.amount}</span> : ""}</div>
-                {m.calories > 0 && (
-                  <div className="mono" style={{ fontSize: 12, color: "#8A8D93", marginTop: 2 }}>
-                    {Math.round(m.calories)} kcal · C {n1(m.carbs)}g · P {n1(m.protein)}g · F {n1(m.fat)}g · Fb {n1(m.fiber)}g
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {/* Desktop puts name and macros on one line — there is width to
+                    spare, and two lines per food halved how many fit. */}
+                {inline ? (
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
+                    <span className="disp" style={{ fontSize: 13, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "45%" }}>
+                      {m.name}{m.amount ? <span className="mono" style={{ fontSize: 11, color: "#8A8D93" }}> · {m.amount}</span> : ""}
+                    </span>
+                    {m.calories > 0 && (
+                      <span className="mono" style={{ fontSize: 11, color: "#8A8D93", whiteSpace: "nowrap", marginLeft: "auto" }}>
+                        {Math.round(m.calories)} kcal · C {n1(m.carbs)} · P {n1(m.protein)} · F {n1(m.fat)} · Fb {n1(m.fiber)}
+                      </span>
+                    )}
                   </div>
+                ) : (
+                  <>
+                    <div className="disp" style={{ fontSize: 14 }}>{m.name}{m.amount ? <span className="mono" style={{ fontSize: 12, color: "#8A8D93" }}> · {m.amount}</span> : ""}</div>
+                    {m.calories > 0 && (
+                      <div className="mono" style={{ fontSize: 12, color: "#8A8D93", marginTop: 2 }}>
+                        {Math.round(m.calories)} kcal · C {n1(m.carbs)}g · P {n1(m.protein)}g · F {n1(m.fat)}g · Fb {n1(m.fiber)}g
+                      </div>
+                    )}
+                  </>
                 )}
                 {m.notes && <div className="mono" style={{ fontSize: 12, color: "#8A8D93", marginTop: 4, lineHeight: 1.4 }}>{m.notes}</div>}
                 {qtyEditId === m.id && (
@@ -2375,7 +2392,7 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
                   </div>
                 )}
               </div>
-              <div style={{ display: "flex", gap: 10, marginLeft: 10 }}>
+              <div style={{ display: "flex", gap: 10, marginLeft: 10, flexShrink: 0 }}>
                 <ChevronRight size={16} color="#8A8D93" />
                 {mode === "edit" && (
                   <button onClick={(e) => { e.stopPropagation(); removeItem(m.id); }} style={{ background: "none", border: "none", color: "#3A3F47", cursor: "pointer" }}><Trash2 size={16} /></button>
@@ -2389,7 +2406,7 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
       {/* Totals live at the foot of the meal: at the top they pushed the food
           list down for a figure that only makes sense after reading it. */}
       <div className="mono" style={{
-        marginTop: 10, paddingTop: 9, borderTop: "1px solid #2A2D33", flexShrink: 0,
+        marginTop: inline ? 7 : 10, paddingTop: inline ? 7 : 9, borderTop: "1px solid #2A2D33", flexShrink: 0,
         display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap", fontSize: 12,
       }}>
         <span style={{ fontSize: 15, fontWeight: 600, color: "#C81E3A" }}>{Math.round(totals.kcal)} kcal</span>
