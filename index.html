@@ -1268,7 +1268,7 @@ function getPrevRecord(workouts, routineKey, slotId) {
   return null;
 }
 
-function PrevRecordLine({ workouts, routineKey, slotId }) {
+function PrevRecordLine({ workouts, routineKey, slotId, oneLine }) {
   const rec = getPrevRecord(workouts, routineKey, slotId);
   if (!rec) return null;
   const { entry: e, date } = rec;
@@ -1279,9 +1279,9 @@ function PrevRecordLine({ workouts, routineKey, slotId }) {
   else if (e.protocol === "rest_pause") rest = <>{(e.repsBreakdown || []).filter(Boolean).reduce((a, v) => a + Number(v), 0) || e.reps} rep ({(e.repsBreakdown || []).join("+")})</>;
   else rest = <>{e.reps} reps</>;
   return (
-    <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginTop: 4 }}>
-      {t("previousRecord")}: <span>{e.weight}{unit} {rest}</span> ({fmtDate(date)})
-    </div>
+    <span className="mono" style={{ fontSize: oneLine ? 10 : 11, color: "#8A8D93", marginTop: oneLine ? 0 : 4, display: oneLine ? "inline" : "block", whiteSpace: oneLine ? "nowrap" : undefined }}>
+      {oneLine ? "▲ " : `${t("previousRecord")}: `}<span>{e.weight}{unit} {rest}</span> ({fmtDate(date)})
+    </span>
   );
 }
 
@@ -1527,9 +1527,10 @@ function App() {
           .food-screen > .wide-grid { flex: 1 1 0; min-height: 0; }
           /* A long meal scrolls its food list rather than pushing the totals
              off screen: the list scrolls, the totals stay at the foot. */
-          .food-screen > .wide-grid > * { overflow: hidden; min-height: 0; display: flex; flex-direction: column; }
-          .meal-inline { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-          .meal-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+          .food-screen > .wide-grid > *,
+          .split-layout > .wide-grid > * { overflow: hidden; min-height: 0; display: flex; flex-direction: column; }
+          .inline-card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+          .inline-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
           .food-screen > .food-totals { flex-shrink: 0; }
         }
         /* Only once there is genuinely room: days left, history in a side column. */
@@ -1537,13 +1538,17 @@ function App() {
           .wide-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         @media (min-width: 1150px) {
+          /* Days on the left, history on the right — both inside one screen.
+             Each side scrolls on its own instead of growing the page. */
           .split-layout {
             display: grid;
             grid-template-columns: minmax(0, 1fr) 330px;
             gap: 18px;
-            align-items: start;
+            height: calc(100dvh - 50px);
           }
-          .side-col { margin-top: 0; }
+          .split-layout > .wide-grid { min-height: 0; }
+          .split-layout > .wide-grid > * { min-height: 0; }
+          .side-col { margin-top: 0; min-height: 0; overflow-y: auto; padding-right: 4px; }
         }
         @media (min-width: 1360px) {
           .split-layout { grid-template-columns: minmax(0, 1fr) 400px; gap: 22px; }
@@ -1648,7 +1653,6 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
   const [screen, setScreen] = useState({ mode: "list" });
   const [expandedHistory, setExpandedHistory] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [editingDay, setEditingDay] = useState(null);
   // With a column of its own there is no reason to keep the history folded.
   useEffect(() => { if (isWide) setHistoryOpen(true); }, [isWide]);
   const suggestedRoutine = cycle[(settings.lastRoutineIndex + 1) % cycle.length];
@@ -1683,25 +1687,16 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
       {/* Desktop: every day is laid out in full, editable in place, so nothing
           needs to be opened just to be read. Mobile keeps the compact summary. */}
       {isWide ? cycle.map((key) => (
-        <div key={key} style={{ ...card, padding: "14px 16px" }}>
-          {editingDay === key ? (
-            <RoutineEdit
-              routineKey={key} config={routineConfig[key]} level={level}
-              onCancel={() => setEditingDay(null)}
-              onSave={async (slots) => { await setRoutineConfig({ ...routineConfig, [key]: slots }); setEditingDay(null); }}
-            />
-          ) : (
-            <>
-              {key === suggestedRoutine && (
-                <div className="mono" style={{ fontSize: 9, color: "#C81E3A", border: "1px solid #C81E3A", padding: "1px 5px", letterSpacing: 0.5, display: "inline-block", marginBottom: 8 }}>{t("suggested")}</div>
-              )}
-              <RoutineView
-                routineKey={key} config={routineConfig[key]} workouts={workouts} level={level} inline
-                onEdit={() => setEditingDay(key)}
-                onLog={() => setScreen({ mode: "log", key })}
-              />
-            </>
-          )}
+        <div key={key} style={{ ...card, padding: "12px 14px" }}>
+          <RoutineView
+            routineKey={key} config={routineConfig[key]} workouts={workouts} level={level} inline
+            suggested={key === suggestedRoutine}
+            onSaveSlot={(next) => setRoutineConfig({
+              ...routineConfig,
+              [key]: routineConfig[key].map((s) => (s.slotId === next.slotId ? next : s)),
+            })}
+            onLog={() => setScreen({ mode: "log", key })}
+          />
         </div>
       )) : cycle.map((key) => (
         <button key={key} onClick={() => setScreen({ mode: "view", key })}
@@ -1796,12 +1791,97 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
   );
 }
 
-function RoutineView({ routineKey, config, workouts, level, inline, onBack, onEdit, onLog }) {
+// One exercise, editable in place: pick the movement, the protocol and the
+// numbers that protocol actually needs.
+function SlotRowEditor({ slot, slotDef, onChange, onDelete, onDone }) {
+  const [draft, setDraft] = useState(slot);
+  const set = (patch) => {
+    const next = { ...draft, ...patch };
+    setDraft(next);
+    onChange(next);
+  };
+  const numStyle = { ...input, padding: "5px 6px", fontSize: 13, width: "100%", textAlign: "center" };
+  const Field = ({ label, children }) => (
+    <label style={{ display: "block" }}>
+      <span className="mono" style={{ fontSize: 9, color: "#8A8D93", display: "block", textAlign: "center", marginBottom: 1 }}>{label}</span>
+      {children}
+    </label>
+  );
+
+  return (
+    <div style={{ ...card, marginBottom: 4, padding: "8px 10px", border: "1px solid #C81E3A" }}>
+      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        <select value={draft.exercise} onChange={(e) => set({ exercise: e.target.value })}
+          style={{ ...input, padding: "5px 8px", fontSize: 14, flex: 1, minWidth: 0 }}>
+          {(slotDef?.options || [draft.exercise]).map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
+        <button onClick={onDone} style={{ background: "none", border: "none", color: "#C81E3A", cursor: "pointer", padding: 4 }}><Check size={17} /></button>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr", gap: 5, marginTop: 6 }}>
+        <Field label={`${t("weight")} (${draft.weightUnit || "kg"})`}>
+          <input type="number" className="mono" value={draft.targetWeight ?? ""}
+            onChange={(e) => set({ targetWeight: e.target.value === "" ? "" : Number(e.target.value) })} style={numStyle} />
+        </Field>
+
+        {draft.timeBased ? (
+          <Field label={t("seconds")}>
+            <input type="number" className="mono" value={draft.targetSeconds ?? ""}
+              onChange={(e) => set({ targetSeconds: e.target.value === "" ? "" : Number(e.target.value) })} style={numStyle} />
+          </Field>
+        ) : (
+          <Field label={t("reps")}>
+            <input type="number" className="mono" value={draft.targetReps ?? ""}
+              onChange={(e) => set({ targetReps: e.target.value === "" ? "" : Number(e.target.value) })} style={numStyle} />
+          </Field>
+        )}
+
+        {/* Only the extras the chosen protocol uses. */}
+        {!draft.timeBased && draft.protocol === "negativas" && (
+          <Field label={t("negatives")}>
+            <input type="number" className="mono" value={draft.targetNegatives ?? ""}
+              onChange={(e) => set({ targetNegatives: e.target.value === "" ? "" : Number(e.target.value) })} style={numStyle} />
+          </Field>
+        )}
+        {!draft.timeBased && draft.protocol === "rest_pause" && (
+          <>
+            <Field label="+ RP">
+              <input type="number" className="mono" value={draft.targetExtra1 ?? ""}
+                onChange={(e) => set({ targetExtra1: e.target.value === "" ? "" : Number(e.target.value) })} style={numStyle} />
+            </Field>
+            <Field label="+ RP">
+              <input type="number" className="mono" value={draft.targetExtra2 ?? ""}
+                onChange={(e) => set({ targetExtra2: e.target.value === "" ? "" : Number(e.target.value) })} style={numStyle} />
+            </Field>
+          </>
+        )}
+      </div>
+
+      <div style={{ display: "flex", gap: 5, marginTop: 6 }}>
+        {!slotDef?.isPreagotamiento && !draft.timeBased && (
+          <select value={draft.protocol} onChange={(e) => set({ protocol: e.target.value })}
+            style={{ ...input, padding: "5px 8px", fontSize: 12, flex: 1, minWidth: 0 }}>
+            <option value="fallo">{tx(PROTOCOLS.fallo.label)}</option>
+            <option value="rest_pause">{tx("Rest-pause")}</option>
+            <option value="negativas">{tx("Negatives")}</option>
+            <option value="submax">{tx("Sub-maximal (not to failure)")}</option>
+          </select>
+        )}
+        <input value={draft.note || ""} placeholder={t("note")}
+          onChange={(e) => set({ note: e.target.value })}
+          style={{ ...input, padding: "5px 8px", fontSize: 12, flex: 1, minWidth: 0 }} />
+      </div>
+    </div>
+  );
+}
+
+function RoutineView({ routineKey, config, workouts, level, inline, suggested, onSaveSlot, onBack, onEdit, onLog }) {
   const base = getRoutines(level)[routineKey];
   const groups = getGroups(routineKey, level);
+  const [openSlot, setOpenSlot] = useState(null);
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+    <div className={inline ? "inline-card" : undefined}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: inline ? 8 : 14, flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
           {/* Embedded in a card on desktop there is nothing to go back from. */}
           {!inline && (
@@ -1812,11 +1892,17 @@ function RoutineView({ routineKey, config, workouts, level, inline, onBack, onEd
             <span className="disp" style={{ fontSize: 12, fontWeight: 700, color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx(base.label)}</span>
           )}
         </div>
-        <button onClick={onEdit} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer", flexShrink: 0 }}><Settings2 size={18} /></button>
+        {suggested && (
+          <span className="mono" style={{ fontSize: 9, color: "#C81E3A", border: "1px solid #C81E3A", padding: "1px 5px", letterSpacing: 0.5, flexShrink: 0, marginLeft: "auto", marginRight: 8 }}>{t("suggested")}</span>
+        )}
+        {!inline && (
+          <button onClick={onEdit} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer", flexShrink: 0 }}><Settings2 size={18} /></button>
+        )}
       </div>
 
+      <div className={inline ? "inline-scroll" : undefined}>
       {groups.map((groupIds, gi) => (
-        <div key={gi} style={{ ...card, marginBottom: 10, padding: "12px 14px", borderLeft: groupIds.length > 1 ? "3px solid #C81E3A" : undefined }}>
+        <div key={gi} style={{ ...card, marginBottom: inline ? 5 : 10, padding: inline ? "8px 10px" : "12px 14px", borderLeft: groupIds.length > 1 ? "3px solid #C81E3A" : undefined }}>
           {groupIds.length > 1 && (
             <div className="mono" style={{ fontSize: 10, color: "#C81E3A", letterSpacing: 1, marginBottom: 10 }}>{t("superset")}</div>
           )}
@@ -1824,6 +1910,31 @@ function RoutineView({ routineKey, config, workouts, level, inline, onBack, onEd
             const slot = config.find((s) => s.slotId === slotId);
             const slotDef = base.slots.find((s) => s.id === slotId);
             return (
+              inline && openSlot === slotId ? (
+                <SlotRowEditor
+                  key={slotId} slot={slot} slotDef={slotDef}
+                  onChange={(next) => onSaveSlot && onSaveSlot(next)}
+                  onDone={() => setOpenSlot(null)}
+                />
+              ) : inline ? (
+                /* Two lines instead of five: the target sits beside the name and
+                   the previous record beside the muscle group. */
+                <div key={slotId} onClick={() => setOpenSlot(slotId)}
+                  style={{ paddingTop: si > 0 ? 7 : 0, marginTop: si > 0 ? 7 : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none", cursor: "pointer" }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
+                    <span className="disp" style={{ fontSize: 15, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "42%" }}>{slot.exercise}</span>
+                    <span className="mono" style={{ fontSize: 12, color: "#E8E6E1", marginLeft: "auto", whiteSpace: "nowrap" }}><MetaRow slot={slot} /></span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0, marginTop: 1 }}>
+                    <span className="mono" style={{ fontSize: 10, color: "#8A8D93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {tx(slotDef?.name)}{slot.note ? ` · ${slot.note}` : ""} · <span style={{ color: "#C81E3A" }}>{slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)}</span>
+                    </span>
+                    <span style={{ marginLeft: "auto", flexShrink: 0 }}>
+                      <PrevRecordLine workouts={workouts} routineKey={routineKey} slotId={slotId} oneLine />
+                    </span>
+                  </div>
+                </div>
+              ) : (
               <div key={slotId} style={{ paddingTop: si > 0 ? 10 : 0, marginTop: si > 0 ? 10 : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none" }}>
                 <div className="disp" style={{ fontSize: 15 }}>{slot.exercise}</div>
                 <div className="mono" style={{ fontSize: 11, color: "#8A8D93", marginTop: 2 }}>{tx(slotDef?.name)}{slot.note ? ` · ${slot.note}` : ""}</div>
@@ -1833,12 +1944,14 @@ function RoutineView({ routineKey, config, workouts, level, inline, onBack, onEd
                   <PrevRecordLine workouts={workouts} routineKey={routineKey} slotId={slotId} />
                 </div>
               </div>
+              )
             );
           })}
         </div>
       ))}
+      </div>
 
-      <button onClick={onLog} style={{ ...btnPrimary, width: "100%", marginTop: 6 }}>
+      <button onClick={onLog} style={{ ...btnPrimary, width: "100%", marginTop: inline ? 8 : 6, flexShrink: 0, padding: inline ? "9px 20px" : "12px 20px" }}>
         <Plus size={16} /> {t("logSession")}
       </button>
     </div>
@@ -2303,7 +2416,7 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
   };
 
   return (
-    <div className={inline ? "meal-inline" : undefined}>
+    <div className={inline ? "inline-card" : undefined}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: inline ? 7 : 12, flexShrink: 0 }}>
         {!inline && (
           <button onClick={onBack} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={20} /></button>
@@ -2323,7 +2436,7 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
         </button>
       </div>
 
-      <div className={inline ? "meal-scroll" : undefined}>
+      <div className={inline ? "inline-scroll" : undefined}>
         {items.length === 0 && <p className="mono" style={{ color: "#8A8D93", fontSize: 12 }}>{t("noFoodsYet")}</p>}
         {items.map((m) => (
           openRow === m.id ? (
