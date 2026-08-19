@@ -1519,20 +1519,20 @@ function App() {
           }
           .wide-grid > .grow { flex: none; overflow: visible; }
           .fill-screen.wide-grid { height: auto; min-height: 0; }
-          .food-side { margin-top: 18px; }
+          .side-col { margin-top: 18px; }
         }
-        /* Only once there is genuinely room: meals left, totals in a side column. */
+        /* Only once there is genuinely room: days left, history in a side column. */
         @media (min-width: 1150px) {
-          .food-layout {
+          .split-layout {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 300px;
+            grid-template-columns: minmax(0, 1fr) 330px;
             gap: 18px;
             align-items: start;
           }
-          .food-side { position: sticky; top: 0; margin-top: 0; }
+          .side-col { margin-top: 0; }
         }
         @media (min-width: 1360px) {
-          .food-layout { grid-template-columns: minmax(0, 1fr) 340px; }
+          .split-layout { grid-template-columns: minmax(0, 1fr) 380px; }
           .wide-grid { gap: 16px; }
         }
         ::selection { background: #C81E3A; color: #fff; }
@@ -1567,7 +1567,7 @@ function App() {
         </div>
       </header>
 
-      <main className={"hd-main" + (railShown ? " no-header" : "")} style={{ padding: isWide ? "20px 24px 24px" : "12px 12px 14px", maxWidth: isWide ? 1100 : 560, margin: "0 auto", width: "100%" }}>
+      <main className={"hd-main" + (railShown ? " no-header" : "")} style={{ padding: isWide ? "20px 24px 24px" : "12px 12px 14px", maxWidth: isWide ? 1400 : 560, margin: "0 auto", width: "100%" }}>
         {!ready ? (
           <div style={{ textAlign: "center", padding: 60, color: "#8A8D93" }} className="mono">{t("loading")}</div>
         ) : !settings.lang ? (
@@ -1634,6 +1634,8 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
   const [screen, setScreen] = useState({ mode: "list" });
   const [expandedHistory, setExpandedHistory] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  // With a column of its own there is no reason to keep the history folded.
+  useEffect(() => { if (isWide) setHistoryOpen(true); }, [isWide]);
   const suggestedRoutine = cycle[(settings.lastRoutineIndex + 1) % cycle.length];
 
   const finishLog = async (routineKey, entries) => {
@@ -1659,7 +1661,10 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
   }
 
   return (
-    <div className={isWide ? "wide-grid" : (historyOpen ? undefined : "fill-screen")}>
+    <div className={isWide ? "split-layout" : undefined}>
+      {/* Days on the left; on a wide screen the history gets its own column
+          instead of sitting far below the fold. */}
+      <div className={isWide ? "wide-grid" : (historyOpen ? undefined : "fill-screen")}>
       {cycle.map((key) => (
         <button key={key} onClick={() => setScreen({ mode: "view", key })}
           className={isWide ? undefined : (historyOpen ? undefined : "grow")}
@@ -1697,7 +1702,10 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
         </button>
       ))}
 
-      <div style={{ marginTop: historyOpen ? 18 : (isWide ? 18 : 4), flexShrink: 0, gridColumn: isWide ? "1 / -1" : undefined }}>
+      </div>
+
+      <div className={isWide ? "side-col" : undefined}
+        style={{ marginTop: isWide ? undefined : (historyOpen ? 18 : 4), flexShrink: 0 }}>
         <button onClick={() => setHistoryOpen((v) => !v)} style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <SectionLabel>{t("history")}</SectionLabel>
           <ChevronDown size={16} color="#8A8D93" style={{ transform: historyOpen ? "rotate(180deg)" : "none" }} />
@@ -1998,7 +2006,6 @@ function Food({ mealPlans, setMealPlans }) {
     <div>
       {/* The four meals fill exactly one screen; the daily total sits below the
           fold on purpose, so it takes a deliberate scroll to reach. */}
-      <div className={isWide ? "food-layout" : undefined}>
       {/* Ends short of the nav bar so meal D doesn't sit flush against it. */}
       <div className={isWide ? "wide-grid" : "fill-screen"}
         style={isWide ? undefined : { height: "calc(100dvh - var(--hd-header) - var(--hd-nav) - var(--hd-mainpad) - 28px)" }}>
@@ -2046,7 +2053,7 @@ function Food({ mealPlans, setMealPlans }) {
       })}
       </div>
 
-      <div className={isWide ? "food-side" : undefined} style={isWide ? undefined : { marginTop: 40 }}>
+      <div style={{ marginTop: isWide ? 18 : 40 }}>
         <SectionLabel>{t("dailyTotal")}</SectionLabel>
         <div style={{ ...card, padding: 14 }}>
           <div style={{ textAlign: "center", marginBottom: 10 }}>
@@ -2076,7 +2083,6 @@ function Food({ mealPlans, setMealPlans }) {
             </div>
           </div>
         </div>
-      </div>
       </div>
     </div>
   );
