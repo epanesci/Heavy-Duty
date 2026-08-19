@@ -1516,6 +1516,19 @@ function App() {
           .wide-grid > .grow { flex: none; overflow: visible; }
           .fill-screen.wide-grid { height: auto; min-height: 0; }
           .side-col { margin-top: 18px; }
+          /* Food fits one screen: the meals take whatever height is left and
+             the day's totals stay pinned at the bottom. main's vertical
+             padding is 22px + 28px. */
+          .food-screen {
+            display: flex;
+            flex-direction: column;
+            height: calc(100dvh - 50px);
+          }
+          .food-screen > .wide-grid { flex: 1 1 0; min-height: 0; }
+          /* A long meal scrolls inside its own card rather than pushing the
+             totals off screen. */
+          .food-screen > .wide-grid > * { overflow-y: auto; min-height: 0; }
+          .food-screen > .food-totals { flex-shrink: 0; }
         }
         /* Only once there is genuinely room: days left, history in a side column. */
         @media (min-width: 1024px) {
@@ -2032,9 +2045,9 @@ function Food({ mealPlans, setMealPlans }) {
   }, { kcal: 0, carbs: 0, protein: 0, fat: 0, fiber: 0 });
 
   return (
-    <div>
-      {/* The four meals fill exactly one screen; the daily total sits below the
-          fold on purpose, so it takes a deliberate scroll to reach. */}
+    <div className={isWide ? "food-screen" : undefined}>
+      {/* Mobile: the four meals fill one screen and the total sits below the
+          fold on purpose. Desktop: everything shares one screen, no scrolling. */}
       {/* Ends short of the nav bar so meal D doesn't sit flush against it. */}
       <div className={isWide ? "wide-grid" : "fill-screen"}
         style={isWide ? undefined : { height: "calc(100dvh - var(--hd-header) - var(--hd-nav) - var(--hd-mainpad) - 28px)" }}>
@@ -2089,7 +2102,7 @@ function Food({ mealPlans, setMealPlans }) {
       })}
       </div>
 
-      <div style={{ marginTop: isWide ? 18 : 40 }}>
+      <div className={isWide ? "food-totals" : undefined} style={{ marginTop: isWide ? 14 : 40 }}>
         <SectionLabel>{t("dailyTotal")}</SectionLabel>
         <div style={{ ...card, padding: 14 }}>
           <div style={{ textAlign: "center", marginBottom: 10 }}>
