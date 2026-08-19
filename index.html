@@ -1633,6 +1633,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
   const [screen, setScreen] = useState({ mode: "list" });
   const [expandedHistory, setExpandedHistory] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [editingDay, setEditingDay] = useState(null);
   // With a column of its own there is no reason to keep the history folded.
   useEffect(() => { if (isWide) setHistoryOpen(true); }, [isWide]);
   const suggestedRoutine = cycle[(settings.lastRoutineIndex + 1) % cycle.length];
@@ -1664,7 +1665,30 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
       {/* Days on the left; on a wide screen the history gets its own column
           instead of sitting far below the fold. */}
       <div className={isWide ? "wide-grid" : (historyOpen ? undefined : "fill-screen")}>
-      {cycle.map((key) => (
+      {/* Desktop: every day is laid out in full, editable in place, so nothing
+          needs to be opened just to be read. Mobile keeps the compact summary. */}
+      {isWide ? cycle.map((key) => (
+        <div key={key} style={{ ...card, padding: "14px 16px" }}>
+          {editingDay === key ? (
+            <RoutineEdit
+              routineKey={key} config={routineConfig[key]} level={level}
+              onCancel={() => setEditingDay(null)}
+              onSave={async (slots) => { await setRoutineConfig({ ...routineConfig, [key]: slots }); setEditingDay(null); }}
+            />
+          ) : (
+            <>
+              {key === suggestedRoutine && (
+                <div className="mono" style={{ fontSize: 9, color: "#C81E3A", border: "1px solid #C81E3A", padding: "1px 5px", letterSpacing: 0.5, display: "inline-block", marginBottom: 8 }}>{t("suggested")}</div>
+              )}
+              <RoutineView
+                routineKey={key} config={routineConfig[key]} workouts={workouts} level={level} inline
+                onEdit={() => setEditingDay(key)}
+                onLog={() => setScreen({ mode: "log", key })}
+              />
+            </>
+          )}
+        </div>
+      )) : cycle.map((key) => (
         <button key={key} onClick={() => setScreen({ mode: "view", key })}
           className={isWide ? undefined : (historyOpen ? undefined : "grow")}
           style={{ ...card, marginBottom: isWide ? 0 : 8, width: "100%", textAlign: "left", cursor: "pointer", display: "block" }}>
@@ -1757,17 +1781,23 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
   );
 }
 
-function RoutineView({ routineKey, config, workouts, level, onBack, onEdit, onLog }) {
+function RoutineView({ routineKey, config, workouts, level, inline, onBack, onEdit, onLog }) {
   const base = getRoutines(level)[routineKey];
   const groups = getGroups(routineKey, level);
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button onClick={onBack} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={20} /></button>
-          <span className="disp" style={{ fontSize: 18, textTransform: "uppercase" }}>Day {routineKey}</span>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
+          {/* Embedded in a card on desktop there is nothing to go back from. */}
+          {!inline && (
+            <button onClick={onBack} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer", alignSelf: "center" }}><X size={20} /></button>
+          )}
+          <span className="disp" style={{ fontSize: 18, textTransform: "uppercase" }}>{t("day")} {routineKey}</span>
+          {inline && (
+            <span className="disp" style={{ fontSize: 12, fontWeight: 700, color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx(base.label)}</span>
+          )}
         </div>
-        <button onClick={onEdit} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><Settings2 size={18} /></button>
+        <button onClick={onEdit} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer", flexShrink: 0 }}><Settings2 size={18} /></button>
       </div>
 
       {groups.map((groupIds, gi) => (
@@ -2008,7 +2038,14 @@ function Food({ mealPlans, setMealPlans }) {
       {/* Ends short of the nav bar so meal D doesn't sit flush against it. */}
       <div className={isWide ? "wide-grid" : "fill-screen"}
         style={isWide ? undefined : { height: "calc(100dvh - var(--hd-header) - var(--hd-nav) - var(--hd-mainpad) - 28px)" }}>
-      {MEAL_KEYS.map((key) => {
+      {isWide ? MEAL_KEYS.map((key) => (
+        <div key={key} style={{ ...card, padding: "14px 16px" }}>
+          <MealPlanDetail
+            planKey={key} plan={mealPlans[key] || { label: "", items: [] }}
+            allPlans={mealPlans} setMealPlans={setMealPlans} inline
+          />
+        </div>
+      )) : MEAL_KEYS.map((key) => {
         const plan = mealPlans[key] || { label: "", items: [] };
         const tot = (plan.items || []).reduce((acc, m) => {
           acc.kcal += Number(m.calories) || 0;
@@ -2087,7 +2124,7 @@ function Food({ mealPlans, setMealPlans }) {
   );
 }
 
-function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, onBack }) {
+function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack }) {
   const [mode, setMode] = useState("view");
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -2214,7 +2251,10 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, onBack }) {
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button onClick={onBack} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={20} /></button>
+          {/* Embedded in a card on desktop there is nothing to go back from. */}
+          {!inline && (
+            <button onClick={onBack} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={20} /></button>
+          )}
           <span className="disp" style={{ fontSize: 18, textTransform: "uppercase" }}>{t("meal")} {planKey}</span>
         </div>
         <button onClick={() => { setMode(mode === "view" ? "edit" : "view"); if (mode === "edit") cancelEdit(); }} style={{ background: "none", border: "none", color: mode === "edit" ? "#C81E3A" : "#8A8D93", cursor: "pointer" }}>
