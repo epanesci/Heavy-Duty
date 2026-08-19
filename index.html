@@ -1525,9 +1525,11 @@ function App() {
             height: calc(100dvh - 50px);
           }
           .food-screen > .wide-grid { flex: 1 1 0; min-height: 0; }
-          /* A long meal scrolls inside its own card rather than pushing the
-             totals off screen. */
-          .food-screen > .wide-grid > * { overflow-y: auto; min-height: 0; }
+          /* A long meal scrolls its food list rather than pushing the totals
+             off screen: the list scrolls, the totals stay at the foot. */
+          .food-screen > .wide-grid > * { overflow: hidden; min-height: 0; display: flex; flex-direction: column; }
+          .meal-inline { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+          .meal-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
           .food-screen > .food-totals { flex-shrink: 0; }
         }
         /* Only once there is genuinely room: days left, history in a side column. */
@@ -2181,7 +2183,14 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
       if (!isNaN(num)) applyFood(dbPick, num);
     }
   };
-  const total = plan.items.reduce((s, m) => s + (Number(m.calories) || 0), 0);
+  const totals = (plan.items || []).reduce((acc, m) => {
+    acc.kcal += Number(m.calories) || 0;
+    acc.carbs += Number(m.carbs) || 0;
+    acc.protein += Number(m.protein) || 0;
+    acc.fat += Number(m.fat) || 0;
+    acc.fiber += Number(m.fiber) || 0;
+    return acc;
+  }, { kcal: 0, carbs: 0, protein: 0, fat: 0, fiber: 0 });
 
   const splitAmount = (a) => {
     const s = String(a || "").trim();
@@ -2261,8 +2270,8 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
   };
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+    <div className={inline ? "meal-inline" : undefined}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {/* Embedded in a card on desktop there is nothing to go back from. */}
           {!inline && (
@@ -2282,11 +2291,6 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
       ) : plan.label ? (
         <div className="disp" style={{ fontSize: 15, color: "#8A8D93", marginBottom: 12 }}>{plan.label}</div>
       ) : null}
-
-      <div style={{ ...card, textAlign: "center", padding: 18, marginBottom: 16 }}>
-        <div className="mono" style={{ fontSize: 26, fontWeight: 600, color: "#C81E3A" }}>{total}</div>
-        <div className="disp" style={{ fontSize: 11, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1 }}>{t("totalCalories")}</div>
-      </div>
 
       {mode === "edit" && (
         <div style={card}>
@@ -2339,7 +2343,7 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
         </div>
       )}
 
-      <div style={{ marginTop: mode === "edit" ? 16 : 0 }}>
+      <div className={inline ? "meal-scroll" : undefined} style={{ marginTop: mode === "edit" ? 16 : 0 }}>
         {plan.items.length === 0 && <p className="mono" style={{ color: "#8A8D93", fontSize: 12 }}>{t("noFoodsYet")}</p>}
         {plan.items.map((m) => (
           <div
@@ -2380,6 +2384,19 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Totals live at the foot of the meal: at the top they pushed the food
+          list down for a figure that only makes sense after reading it. */}
+      <div className="mono" style={{
+        marginTop: 10, paddingTop: 9, borderTop: "1px solid #2A2D33", flexShrink: 0,
+        display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap", fontSize: 12,
+      }}>
+        <span style={{ fontSize: 15, fontWeight: 600, color: "#C81E3A" }}>{Math.round(totals.kcal)} kcal</span>
+        <span style={{ color: "#E8E6E1" }}><span style={{ color: "#8A8D93" }}>C </span>{n1(totals.carbs)}g</span>
+        <span style={{ color: "#E8E6E1" }}><span style={{ color: "#8A8D93" }}>P </span>{n1(totals.protein)}g</span>
+        <span style={{ color: "#E8E6E1" }}><span style={{ color: "#8A8D93" }}>F </span>{n1(totals.fat)}g</span>
+        <span style={{ color: "#E8E6E1" }}><span style={{ color: "#C81E3A" }}>F </span>{n1(totals.fiber)}g</span>
       </div>
     </div>
   );
