@@ -2153,7 +2153,7 @@ function splitAmount(a) {
   return m ? { num: m[1], suffix: m[2] } : { num: "", suffix: s };
 }
 
-function FoodRowEditor({ item, onChange, onDelete, onDone }) {
+function FoodRowEditor({ item, compact, onChange, onDelete, onDone }) {
   const [draft, setDraft] = useState(item);
   const [query, setQuery] = useState("");
 
@@ -2214,21 +2214,23 @@ function FoodRowEditor({ item, onChange, onDelete, onDone }) {
     });
   };
 
-  const num = { ...input, padding: "5px 6px", fontSize: 12, width: "100%", textAlign: "center" };
+  const num = { ...input, padding: compact ? "8px 6px" : "5px 6px", fontSize: compact ? 14 : 12, width: "100%", textAlign: "center" };
   const hits = searchFoods(query);
 
   return (
-    <div style={{ ...card, marginBottom: 3, padding: "8px 10px", border: "1px solid #C81E3A" }}>
-      <div style={{ display: "flex", gap: 6, alignItems: "center", position: "relative" }}>
+    <div style={{ ...card, marginBottom: compact ? 6 : 3, padding: compact ? "10px 12px" : "8px 10px", border: "1px solid #C81E3A" }}>
+      {/* On a phone there is no room for one row: the name takes a line of its
+          own and the amount shares the next one with the actions. */}
+      <div style={{ display: "flex", gap: 6, alignItems: "center", position: "relative", flexWrap: compact ? "wrap" : "nowrap" }}>
         <input
           autoFocus
           value={query || draft.name}
           placeholder={t("phFood")}
           onChange={(e) => { setQuery(e.target.value); commit({ name: e.target.value }); }}
-          style={{ ...input, padding: "5px 8px", fontSize: 14, flex: 1, minWidth: 0 }}
+          style={{ ...input, padding: "5px 8px", fontSize: 14, flex: compact ? "1 0 100%" : 1, minWidth: 0, marginBottom: compact ? 6 : 0 }}
         />
         {/* The field holds the number only; the unit is shown next to it. */}
-        <div style={{ position: "relative", width: 86, flexShrink: 0 }}>
+        <div style={{ position: "relative", width: compact ? 110 : 86, flexShrink: 0 }}>
           <input
             type="number"
             className="mono"
@@ -2241,8 +2243,8 @@ function FoodRowEditor({ item, onChange, onDelete, onDone }) {
             <span className="mono" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "#8A8D93", pointerEvents: "none" }}>{unit}</span>
           )}
         </div>
-        <button onClick={onDone} style={{ background: "none", border: "none", color: "#C81E3A", cursor: "pointer", padding: 4 }}><Check size={17} /></button>
-        <button onClick={onDelete} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer", padding: 4 }}><Trash2 size={16} /></button>
+        <button onClick={onDone} style={{ background: "none", border: "none", color: "#C81E3A", cursor: "pointer", padding: compact ? 8 : 4, marginLeft: compact ? "auto" : 0 }}><Check size={compact ? 20 : 17} /></button>
+        <button onClick={onDelete} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer", padding: compact ? 8 : 4 }}><Trash2 size={compact ? 18 : 16} /></button>
 
         {query.trim() !== "" && hits.length > 0 && (
           <div style={{ position: "absolute", left: 0, right: 0, top: "100%", zIndex: 30, marginTop: 2,
@@ -2261,10 +2263,10 @@ function FoodRowEditor({ item, onChange, onDelete, onDone }) {
         )}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5, marginTop: 6 }}>
+      <div style={{ display: "grid", gridTemplateColumns: compact ? "repeat(3, 1fr)" : "repeat(5, 1fr)", gap: compact ? 7 : 5, marginTop: compact ? 9 : 6 }}>
         {[["calories", "kcal"], ["carbs", "C"], ["protein", "P"], ["fat", "F"], ["fiber", "Fb"]].map(([k, lbl]) => (
           <label key={k} style={{ display: "block" }}>
-            <span className="mono" style={{ fontSize: 9, color: "#8A8D93", display: "block", textAlign: "center", marginBottom: 1 }}>{lbl}</span>
+            <span className="mono" style={{ fontSize: compact ? 10 : 9, color: "#8A8D93", display: "block", textAlign: "center", marginBottom: 1 }}>{lbl}</span>
             <input type="number" className="mono" value={draft[k] ?? ""} onChange={(e) => setMacro(k, e.target.value)} style={num} />
           </label>
         ))}
@@ -2274,62 +2276,11 @@ function FoodRowEditor({ item, onChange, onDelete, onDone }) {
 }
 
 function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack }) {
-  const [mode, setMode] = useState("view");
-  const [name, setName] = useState("");
-  const [amount, setAmount] = useState("");
-  const [calories, setCalories] = useState("");
-  const [carbs, setCarbs] = useState("");
-  const [protein, setProtein] = useState("");
-  const [fat, setFat] = useState("");
-  const [fiber, setFiber] = useState("");
-  const [notes, setNotes] = useState("");
-  const [editingId, setEditingId] = useState(null);
-  const [label, setLabel] = useState(plan.label);
-  const [qtyEditId, setQtyEditId] = useState(null);
-  const [qtyValue, setQtyValue] = useState("");
-  const [qtySuffix, setQtySuffix] = useState("");
-  const [qtyOriginal, setQtyOriginal] = useState("");
-  const [dbQuery, setDbQuery] = useState("");
-  const [dbPick, setDbPick] = useState(null);
   const [openRow, setOpenRow] = useState(null);
+  const [label, setLabel] = useState(plan.label);
+  const items = plan.items || [];
 
-  // Desktop edits each row straight into the plan — no edit mode, no separate form.
-  const patchItem = (next) => {
-    const items = plan.items.map((m) => (m.id === next.id ? next : m));
-    persist(items);
-  };
-  const addBlankItem = async () => {
-    const blank = { id: "mi" + Date.now(), name: "", amount: "", calories: 0, carbs: 0, protein: 0, fat: 0, fiber: 0, notes: "" };
-    await persist([...(plan.items || []), blank]);
-    setOpenRow(blank.id);
-  };
-
-  // Selecting a database food fills the macro fields; changing the amount
-  // afterwards recalculates them, until the user edits a field by hand.
-  const applyFood = (f, qty) => {
-    const v = scaleFood(f, qty);
-    setCalories(String(v.calories));
-    setCarbs(String(v.carbs));
-    setProtein(String(v.protein));
-    setFat(String(v.fat));
-    setFiber(String(v.fiber));
-  };
-  const pickFood = (f) => {
-    const defQty = f.u === "u" ? "1" : "100";
-    setDbPick(f);
-    setDbQuery("");
-    setName(foodLabel(f));
-    setAmount(f.u === "u" ? defQty : defQty + " g");
-    applyFood(f, defQty);
-  };
-  const onAmountChange = (val) => {
-    setAmount(val);
-    if (dbPick) {
-      const num = parseFloat(String(val).replace(",", "."));
-      if (!isNaN(num)) applyFood(dbPick, num);
-    }
-  };
-  const totals = (plan.items || []).reduce((acc, m) => {
+  const totals = items.reduce((acc, m) => {
     acc.kcal += Number(m.calories) || 0;
     acc.carbs += Number(m.carbs) || 0;
     acc.protein += Number(m.protein) || 0;
@@ -2338,171 +2289,54 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
     return acc;
   }, { kcal: 0, carbs: 0, protein: 0, fat: 0, fiber: 0 });
 
-  const startQtyEdit = (m) => {
-    const { num, suffix } = splitAmount(m.amount);
-    setQtyEditId(m.id);
-    setQtyValue(num);
-    setQtySuffix(suffix);
-    setQtyOriginal(num);
-  };
-  const cancelQtyEdit = () => { setQtyEditId(null); setQtyValue(""); setQtySuffix(""); setQtyOriginal(""); };
-  const scaleVal = (v, scale) => n1((Number(v) || 0) * scale);
-  const scaleKcal = (v, scale) => Math.round((Number(v) || 0) * scale);
-  const saveQty = async (m) => {
-    const newAmount = qtySuffix ? `${qtyValue} ${qtySuffix}` : qtyValue;
-    const newNum = parseFloat(qtyValue);
-    const origNum = parseFloat(qtyOriginal);
-    const scale = (origNum > 0 && newNum >= 0 && !isNaN(newNum)) ? newNum / origNum : 1;
-    const items = plan.items.map((it) => (it.id === m.id ? {
-      ...it,
-      amount: newAmount,
-      calories: scaleKcal(it.calories, scale),
-      carbs: scaleVal(it.carbs, scale),
-      protein: scaleVal(it.protein, scale),
-      fat: scaleVal(it.fat, scale),
-      fiber: scaleVal(it.fiber, scale),
-    } : it));
-    await persist(items);
-    cancelQtyEdit();
+  const persist = async (next, newLabel) => {
+    await setMealPlans({ ...allPlans, [planKey]: { label: newLabel ?? plan.label, items: next } });
   };
 
-  const persist = async (items, newLabel) => {
-    await setMealPlans({ ...allPlans, [planKey]: { label: newLabel ?? plan.label, items } });
-  };
-
-  const saveLabel = async () => persist(plan.items, label);
-
-  const startEdit = (m) => {
-    setEditingId(m.id);
-    setDbPick(null);
-    setDbQuery("");
-    setName(m.name);
-    setAmount(m.amount || "");
-    setCalories(m.calories ? String(m.calories) : "");
-    setCarbs(m.carbs ? String(m.carbs) : "");
-    setProtein(m.protein ? String(m.protein) : "");
-    setFat(m.fat ? String(m.fat) : "");
-    setFiber(m.fiber ? String(m.fiber) : "");
-    setNotes(m.notes || "");
-  };
-  const cancelEdit = () => { setEditingId(null); setDbPick(null); setDbQuery(""); setName(""); setAmount(""); setCalories(""); setCarbs(""); setProtein(""); setFat(""); setFiber(""); setNotes(""); };
-
-  const saveItem = async () => {
-    if (!name.trim()) return;
-    const item = {
-      id: editingId || "mi" + Date.now(), name, amount,
-      calories: calories ? Math.round(Number(calories)) : 0,
-      carbs: n1(carbs),
-      protein: n1(protein),
-      fat: n1(fat),
-      fiber: n1(fiber),
-      notes,
-    };
-    const items = editingId ? plan.items.map((m) => (m.id === editingId ? item : m)) : [...plan.items, item];
-    await persist(items);
-    cancelEdit();
-  };
-
-  const removeItem = async (id) => {
-    await persist(plan.items.filter((m) => m.id !== id));
-    if (editingId === id) cancelEdit();
+  // Every edit writes straight through: no edit mode, no separate form.
+  const patchItem = (next) => persist(items.map((m) => (m.id === next.id ? next : m)));
+  const removeItem = (id) => persist(items.filter((m) => m.id !== id));
+  const addBlankItem = async () => {
+    const blank = { id: "mi" + Date.now(), name: "", amount: "", calories: 0, carbs: 0, protein: 0, fat: 0, fiber: 0, notes: "" };
+    await persist([...items, blank]);
+    setOpenRow(blank.id);
   };
 
   return (
     <div className={inline ? "meal-inline" : undefined}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: inline ? 7 : 14, flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* Embedded in a card on desktop there is nothing to go back from. */}
-          {!inline && (
-            <button onClick={onBack} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={20} /></button>
-          )}
-          <span className="disp" style={{ fontSize: inline ? 17 : 18, textTransform: "uppercase" }}>{t("meal")} {planKey}</span>
-        </div>
-        {inline ? (
-          <button onClick={addBlankItem} title={t("addFood")}
-            style={{ background: "none", border: "1px solid #3A3F47", color: "#8A8D93", cursor: "pointer", padding: "3px 8px", display: "flex", alignItems: "center", gap: 5 }}>
-            <Plus size={15} /><span className="disp" style={{ fontSize: 11, textTransform: "uppercase" }}>{t("add")}</span>
-          </button>
-        ) : (
-          <button onClick={() => { setMode(mode === "view" ? "edit" : "view"); if (mode === "edit") cancelEdit(); }} style={{ background: "none", border: "none", color: mode === "edit" ? "#C81E3A" : "#8A8D93", cursor: "pointer" }}>
-            {mode === "view" ? <Settings2 size={18} /> : <Check size={18} />}
-          </button>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: inline ? 7 : 12, flexShrink: 0 }}>
+        {!inline && (
+          <button onClick={onBack} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={20} /></button>
         )}
+        <span className="disp" style={{ fontSize: inline ? 17 : 18, textTransform: "uppercase", flexShrink: 0 }}>{t("meal")} {planKey}</span>
+        <input
+          value={label}
+          placeholder={t("phLabel")}
+          onChange={(e) => setLabel(e.target.value)}
+          onBlur={() => persist(items, label)}
+          className="disp"
+          style={{ background: "none", border: "none", color: "#8A8D93", fontSize: 14, flex: 1, minWidth: 0, padding: 0, outline: "none" }}
+        />
+        <button onClick={addBlankItem} title={t("addFood")}
+          style={{ background: "none", border: "1px solid #3A3F47", color: "#8A8D93", cursor: "pointer", padding: "3px 8px", display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+          <Plus size={15} /><span className="disp" style={{ fontSize: 11, textTransform: "uppercase" }}>{t("add")}</span>
+        </button>
       </div>
 
-      {mode === "edit" && !inline ? (
-        <div style={{ ...card, marginBottom: 12 }}>
-          <input placeholder={t("phLabel")} value={label} onChange={(e) => setLabel(e.target.value)} onBlur={saveLabel} style={input} />
-        </div>
-      ) : plan.label ? (
-        <div className="disp" style={{ fontSize: 15, color: "#8A8D93", marginBottom: 12 }}>{plan.label}</div>
-      ) : null}
-
-      {mode === "edit" && !inline && (
-        <div style={card}>
-          <div style={{ position: "relative", marginBottom: 8 }}>
-            <input
-              placeholder={t("searchFood")}
-              value={dbQuery}
-              onChange={(e) => setDbQuery(e.target.value)}
-              style={{ ...input, borderColor: "#C81E3A" }}
+      <div className={inline ? "meal-scroll" : undefined}>
+        {items.length === 0 && <p className="mono" style={{ color: "#8A8D93", fontSize: 12 }}>{t("noFoodsYet")}</p>}
+        {items.map((m) => (
+          openRow === m.id ? (
+            <FoodRowEditor
+              key={m.id} item={m} compact={!inline}
+              onChange={patchItem}
+              onDelete={() => { setOpenRow(null); removeItem(m.id); }}
+              onDone={() => setOpenRow(null)}
             />
-            {dbQuery.trim() !== "" && (
-              <div style={{ position: "absolute", left: 0, right: 0, top: "100%", zIndex: 20,
-                            background: "#1E2126", border: "1px solid #C81E3A", maxHeight: 220, overflowY: "auto" }}>
-                {searchFoods(dbQuery).length === 0 ? (
-                  <div className="mono" style={{ fontSize: 11, color: "#8A8D93", padding: "10px 12px" }}>{t("orManual")}</div>
-                ) : searchFoods(dbQuery).map((f) => (
-                  <button key={f.n} onClick={() => pickFood(f)}
-                    style={{ display: "block", width: "100%", textAlign: "left", background: "none",
-                             border: "none", borderBottom: "1px solid #2A2D33", padding: "9px 12px", cursor: "pointer" }}>
-                    <div className="disp" style={{ fontSize: 13 }}>{foodLabel(f)}</div>
-                    <div className="mono" style={{ fontSize: 10, color: "#8A8D93", marginTop: 2 }}>
-                      {f.k} kcal · C {f.c} · P {f.p} · F {f.f} — {f.u === "u" ? t("perUnit") : t("per100")}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <input placeholder={t("phFood")} value={name} onChange={(e) => { setName(e.target.value); setDbPick(null); }} style={{ ...input, marginBottom: 8 }} />
-          <input placeholder={t("phAmount")} value={amount} onChange={(e) => onAmountChange(e.target.value)} style={{ ...input, marginBottom: 8 }} />
-          {dbPick && (
-            <div className="mono" style={{ fontSize: 10, color: "#C81E3A", marginBottom: 8 }}>{t("pickedFrom")}</div>
-          )}
-          <input type="number" placeholder={t("phKcal")} value={calories} onChange={(e) => setCalories(e.target.value)} style={{ ...input, marginBottom: 8 }} />
-          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-            <input type="number" placeholder={t("phCarbs")} value={carbs} onChange={(e) => setCarbs(e.target.value)} style={{ ...input, flex: 1 }} />
-            <input type="number" placeholder={t("phProtein")} value={protein} onChange={(e) => setProtein(e.target.value)} style={{ ...input, flex: 1 }} />
-          </div>
-          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-            <input type="number" placeholder={t("phFat")} value={fat} onChange={(e) => setFat(e.target.value)} style={{ ...input, flex: 1 }} />
-            <input type="number" placeholder={t("phFiber")} value={fiber} onChange={(e) => setFiber(e.target.value)} style={{ ...input, flex: 1 }} />
-          </div>
-          <textarea placeholder={t("phDetails")} value={notes} onChange={(e) => setNotes(e.target.value)} style={{ ...input, minHeight: 60, resize: "vertical" }} />
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <button onClick={saveItem} style={{ ...btnPrimary, flex: 1 }}>
-              {editingId ? <Check size={16} /> : <Plus size={16} />} {editingId ? t("saveChanges") : t("add")}
-            </button>
-            {editingId && <button onClick={cancelEdit} style={{ ...btnGhost, flex: "0 0 auto" }}><X size={16} /></button>}
-          </div>
-        </div>
-      )}
-
-      <div className={inline ? "meal-scroll" : undefined} style={{ marginTop: mode === "edit" ? 16 : 0 }}>
-        {plan.items.length === 0 && <p className="mono" style={{ color: "#8A8D93", fontSize: 12 }}>{t("noFoodsYet")}</p>}
-        {plan.items.map((m) => (
-          inline ? (
-            openRow === m.id ? (
-              <FoodRowEditor
-                key={m.id} item={m}
-                onChange={patchItem}
-                onDelete={() => { setOpenRow(null); removeItem(m.id); }}
-                onDone={() => setOpenRow(null)}
-              />
-            ) : (
-              <div key={m.id} onClick={() => setOpenRow(m.id)}
-                style={{ ...card, marginBottom: 3, padding: "5px 10px", cursor: "pointer" }}>
+          ) : (
+            <div key={m.id} onClick={() => setOpenRow(m.id)}
+              style={{ ...card, marginBottom: inline ? 3 : 6, padding: inline ? "5px 10px" : "9px 12px", cursor: "pointer" }}>
+              {inline ? (
                 <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
                   <span className="disp" style={{ fontSize: 15, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "45%", color: m.name ? undefined : "#8A8D93" }}>
                     {m.name || t("phFood")}
@@ -2514,63 +2348,20 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
                     </span>
                   )}
                 </div>
-              </div>
-            )
-          ) : (
-          <div
-            key={m.id}
-            onClick={() => { if (mode === "edit") { startEdit(m); } else { startQtyEdit(m); } }}
-            style={{ ...card, marginBottom: inline ? 3 : 8, padding: inline ? "5px 10px" : "12px 14px", cursor: "pointer", border: (editingId === m.id || qtyEditId === m.id) ? "1px solid #C81E3A" : card.border }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                {/* Desktop puts name and macros on one line — there is width to
-                    spare, and two lines per food halved how many fit. */}
-                {inline ? (
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
-                    <span className="disp" style={{ fontSize: 15, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "45%" }}>
-                      {m.name}{m.amount ? <span className="mono" style={{ fontSize: 12, color: "#8A8D93" }}> · {m.amount}</span> : ""}
-                    </span>
-                    {m.calories > 0 && (
-                      <span className="mono" style={{ fontSize: 13, color: "#8A8D93", whiteSpace: "nowrap", marginLeft: "auto" }}>
-                        {Math.round(m.calories)} kcal · C {n1(m.carbs)} · P {n1(m.protein)} · F {n1(m.fat)} · Fb {n1(m.fiber)}
-                      </span>
-                    )}
+              ) : (
+                <>
+                  <div className="disp" style={{ fontSize: 14, color: m.name ? undefined : "#8A8D93" }}>
+                    {m.name || t("phFood")}
+                    {m.amount ? <span className="mono" style={{ fontSize: 12, color: "#8A8D93" }}> · {m.amount}</span> : ""}
                   </div>
-                ) : (
-                  <>
-                    <div className="disp" style={{ fontSize: 14 }}>{m.name}{m.amount ? <span className="mono" style={{ fontSize: 12, color: "#8A8D93" }}> · {m.amount}</span> : ""}</div>
-                    {m.calories > 0 && (
-                      <div className="mono" style={{ fontSize: 12, color: "#8A8D93", marginTop: 2 }}>
-                        {Math.round(m.calories)} kcal · C {n1(m.carbs)}g · P {n1(m.protein)}g · F {n1(m.fat)}g · Fb {n1(m.fiber)}g
-                      </div>
-                    )}
-                  </>
-                )}
-                {m.notes && <div className="mono" style={{ fontSize: 12, color: "#8A8D93", marginTop: 4, lineHeight: 1.4 }}>{m.notes}</div>}
-                {qtyEditId === m.id && (
-                  <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>
-                    <input
-                      type="number"
-                      autoFocus
-                      value={qtyValue}
-                      onChange={(e) => setQtyValue(e.target.value)}
-                      style={{ ...input, width: 90 }}
-                    />
-                    {qtySuffix && <span className="mono" style={{ fontSize: 12, color: "#8A8D93" }}>{qtySuffix}</span>}
-                    <button onClick={() => saveQty(m)} style={{ ...btnPrimary, padding: "8px 12px" }}><Check size={16} /></button>
-                    <button onClick={cancelQtyEdit} style={{ ...btnGhost, padding: "8px 12px" }}><X size={16} /></button>
-                  </div>
-                )}
-              </div>
-              <div style={{ display: "flex", gap: 10, marginLeft: 10, flexShrink: 0 }}>
-                <ChevronRight size={16} color="#8A8D93" />
-                {mode === "edit" && (
-                  <button onClick={(e) => { e.stopPropagation(); removeItem(m.id); }} style={{ background: "none", border: "none", color: "#3A3F47", cursor: "pointer" }}><Trash2 size={16} /></button>
-                )}
-              </div>
+                  {m.calories > 0 && (
+                    <div className="mono" style={{ fontSize: 12, color: "#8A8D93", marginTop: 2 }}>
+                      {Math.round(m.calories)} kcal · C {n1(m.carbs)}g · P {n1(m.protein)}g · F {n1(m.fat)}g · Fb {n1(m.fiber)}g
+                    </div>
+                  )}
+                </>
+              )}
             </div>
-          </div>
           )
         ))}
       </div>
