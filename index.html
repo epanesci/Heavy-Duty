@@ -2104,10 +2104,15 @@ function Food({ mealPlans, setMealPlans }) {
       })}
       </div>
 
-      <div className={isWide ? "food-totals" : undefined} style={{ marginTop: isWide ? 14 : 40 }}>
-        <SectionLabel>{t("dailyTotal")}</SectionLabel>
-        <div style={{ ...card, padding: 14 }}>
-          <div style={{ textAlign: "center", marginBottom: 10 }}>
+      <div className={isWide ? "food-totals" : undefined} style={{ marginTop: isWide ? 12 : 40 }}>
+        {/* On desktop the heading lives inside the box, freeing a row of
+            vertical space for the meals above. */}
+        {!isWide && <SectionLabel>{t("dailyTotal")}</SectionLabel>}
+        <div style={{ ...card, padding: isWide ? "10px 16px" : 14, position: "relative" }}>
+          {isWide && (
+            <div className="disp" style={{ position: "absolute", top: 10, left: 16, fontSize: 11, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1 }}>{t("dailyTotal")}</div>
+          )}
+          <div style={{ textAlign: "center", marginBottom: isWide ? 6 : 10 }}>
             <div className="mono" style={{ fontSize: 30, fontWeight: 600, color: "#C81E3A" }}>{Math.round(dayTotals.kcal)}</div>
             <div className="disp" style={{ fontSize: 11, color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1 }}>{t("totalKcal")}</div>
           </div>
@@ -2277,7 +2282,7 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
           {!inline && (
             <button onClick={onBack} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={20} /></button>
           )}
-          <span className="disp" style={{ fontSize: inline ? 15 : 18, textTransform: "uppercase" }}>{t("meal")} {planKey}</span>
+          <span className="disp" style={{ fontSize: inline ? 17 : 18, textTransform: "uppercase" }}>{t("meal")} {planKey}</span>
         </div>
         <button onClick={() => { setMode(mode === "view" ? "edit" : "view"); if (mode === "edit") cancelEdit(); }} style={{ background: "none", border: "none", color: mode === "edit" ? "#C81E3A" : "#8A8D93", cursor: "pointer" }}>
           {mode === "view" ? <Settings2 size={18} /> : <Check size={18} />}
@@ -2357,11 +2362,11 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
                     spare, and two lines per food halved how many fit. */}
                 {inline ? (
                   <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
-                    <span className="disp" style={{ fontSize: 13, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "45%" }}>
-                      {m.name}{m.amount ? <span className="mono" style={{ fontSize: 11, color: "#8A8D93" }}> · {m.amount}</span> : ""}
+                    <span className="disp" style={{ fontSize: 15, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "45%" }}>
+                      {m.name}{m.amount ? <span className="mono" style={{ fontSize: 12, color: "#8A8D93" }}> · {m.amount}</span> : ""}
                     </span>
                     {m.calories > 0 && (
-                      <span className="mono" style={{ fontSize: 11, color: "#8A8D93", whiteSpace: "nowrap", marginLeft: "auto" }}>
+                      <span className="mono" style={{ fontSize: 13, color: "#8A8D93", whiteSpace: "nowrap", marginLeft: "auto" }}>
                         {Math.round(m.calories)} kcal · C {n1(m.carbs)} · P {n1(m.protein)} · F {n1(m.fat)} · Fb {n1(m.fiber)}
                       </span>
                     )}
@@ -2407,9 +2412,9 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
           list down for a figure that only makes sense after reading it. */}
       <div className="mono" style={{
         marginTop: inline ? 7 : 10, paddingTop: inline ? 7 : 9, borderTop: "1px solid #2A2D33", flexShrink: 0,
-        display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap", fontSize: 12,
+        display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap", fontSize: 14,
       }}>
-        <span style={{ fontSize: 15, fontWeight: 600, color: "#C81E3A" }}>{Math.round(totals.kcal)} kcal</span>
+        <span style={{ fontSize: 17, fontWeight: 600, color: "#C81E3A" }}>{Math.round(totals.kcal)} kcal</span>
         <span style={{ color: "#E8E6E1" }}><span style={{ color: "#8A8D93" }}>C </span>{n1(totals.carbs)}g</span>
         <span style={{ color: "#E8E6E1" }}><span style={{ color: "#8A8D93" }}>P </span>{n1(totals.protein)}g</span>
         <span style={{ color: "#E8E6E1" }}><span style={{ color: "#8A8D93" }}>F </span>{n1(totals.fat)}g</span>
