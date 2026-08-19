@@ -2146,29 +2146,72 @@ function Food({ mealPlans, setMealPlans }) {
 
 // One food, editable in place. The name field doubles as the database search:
 // picking a suggestion fills the macros, and changing the amount rescales them.
+// "250 g" -> { num: "250", suffix: "g" }. Shared by both editors.
+function splitAmount(a) {
+  const s = String(a || "").trim();
+  const m = s.match(/^(\d+(?:\.\d+)?)\s*(.*)$/);
+  return m ? { num: m[1], suffix: m[2] } : { num: "", suffix: s };
+}
+
 function FoodRowEditor({ item, onChange, onDelete, onDone }) {
   const [draft, setDraft] = useState(item);
   const [query, setQuery] = useState("");
-  const [source, setSource] = useState(null); // db entry the macros came from
 
-  const set = (patch) => {
-    const next = { ...draft, ...patch };
+  // The amount is split so the unit is shown beside the field instead of being
+  // typed into it, and so the quantity stays a plain number to compute with.
+  const parsed = splitAmount(item.amount);
+  const [qty, setQty] = useState(parsed.num);
+  const [unit, setUnit] = useState(parsed.suffix || "g");
+
+  // Reference point for rescaling: the macros as they stand at a known quantity.
+  // Works for a food picked from the database and for one typed by hand.
+  const [base, setBase] = useState({
+    qty: parseFloat(parsed.num) || 0,
+    macros: { calories: item.calories, carbs: item.carbs, protein: item.protein, fat: item.fat, fiber: item.fiber },
+  });
+
+  const commit = (patch, q = qty, u = unit) => {
+    const amount = q === "" ? "" : (u ? `${q} ${u}` : String(q));
+    const next = { ...draft, ...patch, amount };
     setDraft(next);
     onChange(next);
   };
 
   const pick = (f) => {
-    const qty = f.u === "u" ? 1 : 100;
-    const v = scaleFood(f, qty);
-    setSource(f);
+    const q = f.u === "u" ? "1" : "100";
+    const u = f.u === "u" ? "" : "g";
+    const macros = scaleFood(f, Number(q));
     setQuery("");
-    set({ name: foodLabel(f), amount: f.u === "u" ? "1" : "100 g", ...v });
+    setQty(q);
+    setUnit(u);
+    setBase({ qty: Number(q), macros });
+    commit({ name: foodLabel(f), ...macros }, q, u);
   };
 
-  const onAmount = (val) => {
-    if (!source) return set({ amount: val });
-    const num = parseFloat(String(val).replace(",", "."));
-    set(isNaN(num) ? { amount: val } : { amount: val, ...scaleFood(source, num) });
+  const onQty = (val) => {
+    setQty(val);
+    const n = parseFloat(String(val).replace(",", "."));
+    if (isNaN(n) || !base.qty) return commit({}, val, unit);
+    const factor = n / base.qty;
+    commit({
+      calories: Math.round((base.macros.calories || 0) * factor),
+      carbs: n1((base.macros.carbs || 0) * factor),
+      protein: n1((base.macros.protein || 0) * factor),
+      fat: n1((base.macros.fat || 0) * factor),
+      fiber: n1((base.macros.fiber || 0) * factor),
+    }, val, unit);
+  };
+
+  // A macro edited by hand becomes the new reference for further rescaling.
+  const setMacro = (k, v) => {
+    const value = n1(v);
+    const next = { ...draft, [k]: value };
+    setDraft(next);
+    onChange(next);
+    setBase({
+      qty: parseFloat(String(qty).replace(",", ".")) || base.qty,
+      macros: { calories: next.calories, carbs: next.carbs, protein: next.protein, fat: next.fat, fiber: next.fiber },
+    });
   };
 
   const num = { ...input, padding: "5px 6px", fontSize: 12, width: "100%", textAlign: "center" };
@@ -2181,15 +2224,23 @@ function FoodRowEditor({ item, onChange, onDelete, onDone }) {
           autoFocus
           value={query || draft.name}
           placeholder={t("phFood")}
-          onChange={(e) => { setQuery(e.target.value); set({ name: e.target.value }); setSource(null); }}
+          onChange={(e) => { setQuery(e.target.value); commit({ name: e.target.value }); }}
           style={{ ...input, padding: "5px 8px", fontSize: 14, flex: 1, minWidth: 0 }}
         />
-        <input
-          value={draft.amount || ""}
-          placeholder={t("amount")}
-          onChange={(e) => onAmount(e.target.value)}
-          style={{ ...input, padding: "5px 8px", fontSize: 13, width: 92 }}
-        />
+        {/* The field holds the number only; the unit is shown next to it. */}
+        <div style={{ position: "relative", width: 86, flexShrink: 0 }}>
+          <input
+            type="number"
+            className="mono"
+            value={qty}
+            placeholder={t("amount")}
+            onChange={(e) => onQty(e.target.value)}
+            style={{ ...input, padding: "5px 24px 5px 8px", fontSize: 13, width: "100%" }}
+          />
+          {unit && (
+            <span className="mono" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "#8A8D93", pointerEvents: "none" }}>{unit}</span>
+          )}
+        </div>
         <button onClick={onDone} style={{ background: "none", border: "none", color: "#C81E3A", cursor: "pointer", padding: 4 }}><Check size={17} /></button>
         <button onClick={onDelete} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer", padding: 4 }}><Trash2 size={16} /></button>
 
@@ -2214,7 +2265,7 @@ function FoodRowEditor({ item, onChange, onDelete, onDone }) {
         {[["calories", "kcal"], ["carbs", "C"], ["protein", "P"], ["fat", "F"], ["fiber", "Fb"]].map(([k, lbl]) => (
           <label key={k} style={{ display: "block" }}>
             <span className="mono" style={{ fontSize: 9, color: "#8A8D93", display: "block", textAlign: "center", marginBottom: 1 }}>{lbl}</span>
-            <input type="number" className="mono" value={draft[k] ?? ""} onChange={(e) => set({ [k]: n1(e.target.value) })} style={num} />
+            <input type="number" className="mono" value={draft[k] ?? ""} onChange={(e) => setMacro(k, e.target.value)} style={num} />
           </label>
         ))}
       </div>
@@ -2286,13 +2337,6 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
     acc.fiber += Number(m.fiber) || 0;
     return acc;
   }, { kcal: 0, carbs: 0, protein: 0, fat: 0, fiber: 0 });
-
-  const splitAmount = (a) => {
-    const s = String(a || "").trim();
-    const mtch = s.match(/^(\d+(?:\.\d+)?)\s*(.*)$/);
-    if (mtch) return { num: mtch[1], suffix: mtch[2] };
-    return { num: "", suffix: s };
-  };
 
   const startQtyEdit = (m) => {
     const { num, suffix } = splitAmount(m.amount);
