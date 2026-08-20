@@ -1398,7 +1398,7 @@ function LevelPicker({ onPick }) {
 
 // ---------------- APP ----------------
 function App() {
-  const [tab, setTab] = useState("train");
+  const [tab, setTab] = useState("food");
   const [settings, setSettings, sLoaded] = useStorage(STORAGE_KEYS.settings, { lastRoutineIndex: 1, level: DEFAULT_LEVEL, onboarded: false, lang: null });
   const [workouts, setWorkouts, wLoaded] = useStorage(STORAGE_KEYS.workouts, SEED_WORKOUTS);
   const [routineConfig, setRoutineConfig, rLoaded] = useStorage(STORAGE_KEYS.routineConfig, buildDefaultRoutineConfig());
@@ -1458,7 +1458,7 @@ function App() {
     await setMealPlans(buildStarterMealPlans());
     await setNotes("");
     await setSettings({ ...settings, lastRoutineIndex: getCycle(levelKey).length - 1, level: levelKey, onboarded: true });
-    setTab("train");
+    setTab("food");
   };
 
   return (
@@ -1578,8 +1578,8 @@ function App() {
             <div style={{ width: 6, height: 26, background: "#C81E3A" }} />
             <span className="disp" style={{ fontSize: px(20), fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>Heavy Duty</span>
           </div>
-          <SideBtn icon={<Flame size={px(18)} />} label={t("train")} active={tab === "train"} onClick={() => setTab("train")} />
           <SideBtn icon={<Utensils size={px(18)} />} label={t("food")} active={tab === "food"} onClick={() => setTab("food")} />
+          <SideBtn icon={<Flame size={px(18)} />} label={t("train")} active={tab === "train"} onClick={() => setTab("train")} />
           <SideBtn icon={<TrendingUp size={px(18)} />} label={t("progress")} active={tab === "progress"} onClick={() => setTab("progress")} />
           <SideBtn icon={<BookOpen size={px(18)} />} label={t("books")} active={tab === "books"} onClick={() => setTab("books")} />
           <div style={{ flex: 1 }} />
@@ -1629,8 +1629,8 @@ function App() {
 
       {!isWide && ready && settings.lang && settings.onboarded && !showSettings && (
         <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#1E2126", borderTop: "1px solid #2A2D33", display: "flex", padding: "8px 0 max(8px, env(safe-area-inset-bottom))" }}>
-          <NavBtn icon={<Flame size={px(19)} />} label={t("train")} active={tab === "train"} onClick={() => setTab("train")} />
           <NavBtn icon={<Utensils size={px(19)} />} label={t("food")} active={tab === "food"} onClick={() => setTab("food")} />
+          <NavBtn icon={<Flame size={px(19)} />} label={t("train")} active={tab === "train"} onClick={() => setTab("train")} />
           <NavBtn icon={<TrendingUp size={px(19)} />} label={t("progress")} active={tab === "progress"} onClick={() => setTab("progress")} />
           <NavBtn icon={<BookOpen size={px(19)} />} label={t("books")} active={tab === "books"} onClick={() => setTab("books")} />
         </nav>
