@@ -1410,7 +1410,7 @@ function App() {
   const isWide = useIsWide();
   const railShown = isWide && ready && settings.lang && settings.onboarded;
   CURRENT_LANG = settings.lang || "en";
-  SCALE = isWide ? 1.12 : 1;
+  SCALE = isWide ? 1.23 : 1;
 
   const pickLang = async (lang) => { await setSettings({ ...settings, lang }); };
 
