@@ -1545,6 +1545,10 @@ function App() {
           .split-layout > .wide-grid > * { overflow: hidden; min-height: 0; display: flex; flex-direction: column; }
           .inline-card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
           .inline-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+          /* The log form is meant to fit the days column outright — every field
+             visible at once, no scrolling while you are mid-session. */
+          .log-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: flex-start; gap: 0; overflow: hidden; }
+          .log-body > * { flex: 0 0 auto; }
           .food-screen > .food-totals { flex-shrink: 0; }
         }
         /* Only once there is genuinely room: days left, history in a side column. */
@@ -2130,17 +2134,17 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
         </div>
       </div>
 
-      <div className={inline ? "inline-scroll" : undefined}>
+      <div className={inline ? "log-body" : undefined}>
       {groups.map((groupIds, gi) => (
-        <div key={gi} style={{ ...card, marginBottom: 12, borderLeft: groupIds.length > 1 ? "3px solid #C81E3A" : undefined }}>
+        <div key={gi} style={{ ...card, marginBottom: inline ? 6 : 12, padding: inline ? "8px 10px" : undefined, borderLeft: groupIds.length > 1 ? "3px solid #C81E3A" : undefined }}>
           {groupIds.length > 1 && (
-            <div className="mono" style={{ fontSize: px(10), color: "#C81E3A", letterSpacing: 1, marginBottom: 10 }}>{t("superset")}</div>
+            <div className="mono" style={{ fontSize: px(10), color: "#C81E3A", letterSpacing: 1, marginBottom: inline ? 5 : 10 }}>{t("superset")}</div>
           )}
           {groupIds.map((slotId, si) => {
             const i = config.findIndex((s) => s.slotId === slotId);
             const slot = config[i];
             return (
-              <div key={slotId} style={{ paddingTop: si > 0 ? 12 : 0, marginTop: si > 0 ? 12 : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none" }}>
+              <div key={slotId} style={{ paddingTop: si > 0 ? (inline ? 7 : 12) : 0, marginTop: si > 0 ? (inline ? 7 : 12) : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none" }}>
                 <div className="disp" style={{ fontSize: px(14), marginBottom: 2 }}>{slot.exercise}</div>
                 <div className="mono" style={{ fontSize: px(11), color: "#C81E3A", marginBottom: 4 }}>
                   {slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)} · target <MetaRow slot={slot} />{slot.note ? ` · ${slot.note}` : ""}
@@ -2148,12 +2152,13 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
                 <PrevRecordLine workouts={workouts} routineKey={routineKey} slotId={slotId} />
                 <div style={{ marginTop: 8 }} />
 
-                <input type="number" placeholder={`Weight (${slot.weightUnit || "kg"})`} value={entries[i].weight} onChange={(e) => update(i, "weight", e.target.value)} style={{ ...input, marginBottom: 8 }} />
+                <div style={{ display: inline ? "flex" : "block", gap: 8 }}>
+                <input type="number" placeholder={`${t("weight")} (${slot.weightUnit || "kg"})`} value={entries[i].weight} onChange={(e) => update(i, "weight", e.target.value)} style={{ ...input, marginBottom: inline ? 0 : 8, flex: inline ? 1 : undefined, minWidth: 0, padding: inline ? "7px 8px" : undefined }} />
 
                 {slot.timeBased ? (
                   <input type="number" placeholder={t("phSeconds")} value={entries[i].seconds} onChange={(e) => update(i, "seconds", e.target.value)} style={input} />
                 ) : slot.protocol === "rest_pause" ? (
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ display: "flex", gap: 8, flex: inline ? 2 : undefined, minWidth: 0 }}>
                     <input type="number" placeholder={t("phPositiveReps")} value={entries[i].repsBreakdown[0]} onChange={(e) => updateBreakdown(i, 0, e.target.value)} style={{ ...input, flex: 1 }} />
                     <input type="number" placeholder="+15s" value={entries[i].repsBreakdown[1]} onChange={(e) => updateBreakdown(i, 1, e.target.value)} style={{ ...input, flex: 1 }} />
                     <input type="number" placeholder="+15s" value={entries[i].repsBreakdown[2]} onChange={(e) => updateBreakdown(i, 2, e.target.value)} style={{ ...input, flex: 1 }} />
@@ -2166,6 +2171,7 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
                     )}
                   </div>
                 )}
+                </div>
               </div>
             );
           })}
