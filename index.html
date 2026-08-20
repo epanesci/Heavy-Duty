@@ -1469,6 +1469,11 @@ function App() {
         .mono { font-family: 'JetBrains Mono', monospace; }
         * { box-sizing: border-box; }
         input, select, textarea { font-family: inherit; }
+        /* No spinners: the arrows are easy to nudge by accident and invite
+           changing a figure with the mouse instead of typing it. */
+        input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         /* Buttons don't inherit color by default — without this they render
            with the system's black button text once deployed outside the preview. */
         button { color: inherit; font-family: inherit; }
