@@ -1572,9 +1572,13 @@ function App() {
           .split-layout > .wide-grid { min-height: 0; }
           .split-layout > .wide-grid > * { min-height: 0; }
           .side-col { margin-top: 0; min-height: 0; overflow-y: auto; padding-right: 4px; }
-          .split-left { min-height: 0; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; }
+          .split-left { min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 14px; }
+          /* Progress has a tab strip above the split, so the split takes the
+             leftover height instead of assuming it owns the whole screen. */
+          .prog-screen { display: flex; flex-direction: column; height: calc(var(--hd-vh) - 50px); }
+          .prog-screen > .split-layout { height: auto; flex: 1 1 auto; min-height: 0; }
           /* The chart takes whatever height the controls above it leave over. */
-          .chart-fill { flex: 1 1 auto; min-height: 220px; display: flex; flex-direction: column; }
+          .chart-fill { flex: 1 1 0; min-height: 180px; display: flex; flex-direction: column; overflow: hidden; }
           .chart-fill > .chart-area { flex: 1 1 auto; min-height: 0; }
           .split-left > *:not(.chart-fill) { flex-shrink: 0; }
         }
@@ -2569,9 +2573,10 @@ function MealPlanDetail({ planKey, plan, allPlans, setMealPlans, inline, onBack 
 // ---------------- PROGRESS ----------------
 function Progress({ workouts, bodystats, setBodystats }) {
   const [sub, setSub] = useState("performance");
+  const isWide = useIsWide();
   return (
-    <div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+    <div className={isWide ? "prog-screen" : undefined}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexShrink: 0 }}>
         <SubTab label={t("performance")} active={sub === "performance"} onClick={() => setSub("performance")} />
         <SubTab label={t("bodyComposition")} active={sub === "body"} onClick={() => setSub("body")} />
       </div>
@@ -2621,14 +2626,14 @@ function BodyComposition({ bodystats, setBodystats }) {
       </div>
 
       {latestCalc && (
-        <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+        <div style={{ display: "flex", gap: 10, marginTop: isWide ? 0 : 16 }}>
           <StatCard value={latestCalc.lean} label={t("leanMassKg")} />
           <StatCard value={latestCalc.ffmi ?? "—"} label="FFMI" />
         </div>
       )}
 
       {ffmiData.length >= 2 && CHARTS_OK ? (
-        <div className={isWide ? "chart-fill" : undefined} style={{ ...card, padding: "18px 8px 8px", marginTop: 16 }}>
+        <div className={isWide ? "chart-fill" : undefined} style={{ ...card, padding: "18px 8px 8px", marginTop: isWide ? 0 : 16 }}>
           <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", padding: "0 8px 8px" }}>{t("bodyWeightKg")}</div>
           <div className={isWide ? "chart-area" : undefined}>
           <ResponsiveContainer width="100%" height={isWide ? "100%" : 180}>
@@ -2715,7 +2720,7 @@ function Performance({ workouts }) {
   return (
     <div className={isWide ? "split-layout" : undefined}>
       <div className={isWide ? "split-left" : undefined}>
-      <select value={exercise} onChange={(e) => setExercise(e.target.value)} style={{ ...input, marginBottom: 16 }}>
+      <select value={exercise} onChange={(e) => setExercise(e.target.value)} style={{ ...input, marginBottom: isWide ? 0 : 16 }}>
         {allExercises.map((ex) => <option key={ex} value={ex}>{ex}</option>)}
       </select>
       {points.length >= 2 && CHARTS_OK ? (
