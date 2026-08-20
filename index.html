@@ -1572,7 +1572,11 @@ function App() {
           .split-layout > .wide-grid { min-height: 0; }
           .split-layout > .wide-grid > * { min-height: 0; }
           .side-col { margin-top: 0; min-height: 0; overflow-y: auto; padding-right: 4px; }
-          .split-left { min-height: 0; overflow-y: auto; padding-right: 4px; }
+          .split-left { min-height: 0; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; }
+          /* The chart takes whatever height the controls above it leave over. */
+          .chart-fill { flex: 1 1 auto; min-height: 220px; display: flex; flex-direction: column; }
+          .chart-fill > .chart-area { flex: 1 1 auto; min-height: 0; }
+          .split-left > *:not(.chart-fill) { flex-shrink: 0; }
         }
         @media (min-width: 1360px) {
           .split-layout { grid-template-columns: minmax(0, 1fr) 400px; gap: 22px; }
@@ -2624,9 +2628,10 @@ function BodyComposition({ bodystats, setBodystats }) {
       )}
 
       {ffmiData.length >= 2 && CHARTS_OK ? (
-        <div style={{ ...card, padding: "18px 8px 8px", marginTop: 16 }}>
+        <div className={isWide ? "chart-fill" : undefined} style={{ ...card, padding: "18px 8px 8px", marginTop: 16 }}>
           <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", padding: "0 8px 8px" }}>{t("bodyWeightKg")}</div>
-          <ResponsiveContainer width="100%" height={isWide ? 300 : 180}>
+          <div className={isWide ? "chart-area" : undefined}>
+          <ResponsiveContainer width="100%" height={isWide ? "100%" : 180}>
             <LineChart data={ffmiData}>
               <CartesianGrid stroke="#2A2D33" vertical={false} />
               <XAxis dataKey="label" stroke="#8A8D93" fontSize={10} />
@@ -2635,6 +2640,7 @@ function BodyComposition({ bodystats, setBodystats }) {
               <Line type="monotone" dataKey="weight" stroke="#C81E3A" strokeWidth={2} dot={{ fill: "#C81E3A", r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
+          </div>
         </div>
       ) : (
         <p className="mono" style={{ color: "#8A8D93", fontSize: px(12), textAlign: "center", padding: 24 }}>{t("needTwoMeasurements")}</p>
@@ -2713,9 +2719,10 @@ function Performance({ workouts }) {
         {allExercises.map((ex) => <option key={ex} value={ex}>{ex}</option>)}
       </select>
       {points.length >= 2 && CHARTS_OK ? (
-        <div style={{ ...card, padding: "18px 8px 8px" }}>
+        <div className={isWide ? "chart-fill" : undefined} style={{ ...card, padding: "18px 8px 8px" }}>
           <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", padding: "0 8px 8px" }}>{isTimeBased ? t("secondsHeld") : `${t("theoretical1RM")} (${unit.toUpperCase()})`}</div>
-          <ResponsiveContainer width="100%" height={isWide ? 320 : 200}>
+          <div className={isWide ? "chart-area" : undefined}>
+          <ResponsiveContainer width="100%" height={isWide ? "100%" : 200}>
             <LineChart data={points}>
               <CartesianGrid stroke="#2A2D33" vertical={false} />
               <XAxis dataKey="label" stroke="#8A8D93" fontSize={10} />
@@ -2724,6 +2731,7 @@ function Performance({ workouts }) {
               <Line type="monotone" dataKey={isTimeBased ? "seconds" : "oneRM"} stroke="#C81E3A" strokeWidth={2} dot={{ fill: "#C81E3A", r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
+          </div>
         </div>
       ) : (
         <p className="mono" style={{ color: "#8A8D93", fontSize: px(12), textAlign: "center", padding: 24 }}>{t("needTwoSessions")}</p>
