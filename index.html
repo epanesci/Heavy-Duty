@@ -224,7 +224,7 @@ function t(key) {
 
 const { useState, useEffect, useMemo } = React;
 const __R = (typeof Recharts !== "undefined" && Recharts) || window.Recharts || {};
-const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = __R;
+const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } = __R;
 const CHARTS_OK = !!LineChart;
 
 // ---------------- DEFAULT DATA ----------------
@@ -2640,9 +2640,14 @@ function BodyComposition({ bodystats, setBodystats }) {
             <LineChart data={ffmiData}>
               <CartesianGrid stroke="#2A2D33" vertical={false} />
               <XAxis dataKey="label" stroke="#8A8D93" fontSize={10} />
-              <YAxis stroke="#8A8D93" fontSize={10} domain={["dataMin - 2", "dataMax + 2"]} />
+              <YAxis stroke="#8A8D93" fontSize={10} domain={["dataMin - 2", "dataMax + 3"]} />
               <Tooltip contentStyle={{ background: "#1E2126", border: "1px solid #2A2D33", fontSize: px(12) }} labelStyle={{ color: "#E8E6E1" }} />
-              <Line type="monotone" dataKey="weight" stroke="#C81E3A" strokeWidth={2} dot={{ fill: "#C81E3A", r: 3 }} />
+              <Line type="monotone" dataKey="weight" stroke="#C81E3A" strokeWidth={2} dot={{ fill: "#C81E3A", r: 3 }}>
+                {LabelList && (
+                  <LabelList dataKey="weight" position="top" offset={8}
+                    style={{ fill: "#E8E6E1", fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }} />
+                )}
+              </Line>
             </LineChart>
           </ResponsiveContainer>
           </div>
@@ -2731,9 +2736,14 @@ function Performance({ workouts }) {
             <LineChart data={points}>
               <CartesianGrid stroke="#2A2D33" vertical={false} />
               <XAxis dataKey="label" stroke="#8A8D93" fontSize={10} />
-              <YAxis stroke="#8A8D93" fontSize={10} domain={["dataMin - 5", "dataMax + 5"]} />
+              <YAxis stroke="#8A8D93" fontSize={10} domain={["dataMin - 5", "dataMax + 8"]} />
               <Tooltip contentStyle={{ background: "#1E2126", border: "1px solid #2A2D33", fontSize: px(12) }} labelStyle={{ color: "#E8E6E1" }} formatter={(v, n) => n === "oneRM" ? [`${v} ${unit}`, "Theoretical 1RM"] : n === "seconds" ? [`${v}s`, "Seconds"] : [v, n]} />
-              <Line type="monotone" dataKey={isTimeBased ? "seconds" : "oneRM"} stroke="#C81E3A" strokeWidth={2} dot={{ fill: "#C81E3A", r: 3 }} />
+              <Line type="monotone" dataKey={isTimeBased ? "seconds" : "oneRM"} stroke="#C81E3A" strokeWidth={2} dot={{ fill: "#C81E3A", r: 3 }}>
+                {LabelList && (
+                  <LabelList dataKey={isTimeBased ? "seconds" : "oneRM"} position="top" offset={8}
+                    style={{ fill: "#E8E6E1", fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }} />
+                )}
+              </Line>
             </LineChart>
           </ResponsiveContainer>
           </div>
