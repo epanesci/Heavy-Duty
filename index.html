@@ -1722,6 +1722,15 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
     <div className={isWide ? "split-layout" : undefined}>
       {/* Days on the left; on a wide screen the history gets its own column
           instead of sitting far below the fold. */}
+      {loggingKey ? (
+        <div style={{ ...card, padding: "12px 14px", minHeight: 0, display: "flex", flexDirection: "column" }}>
+          <LogSession
+            routineKey={loggingKey} config={routineConfig[loggingKey]} workouts={workouts} level={level} inline
+            onCancel={() => setScreen({ mode: "list" })}
+            onFinish={finishLog}
+          />
+        </div>
+      ) : (
       <div className={isWide ? "wide-grid" : (historyOpen ? undefined : "fill-screen")}>
       {/* Desktop: every day is laid out in full, editable in place, so nothing
           needs to be opened just to be read. Mobile keeps the compact summary. */}
@@ -1775,18 +1784,8 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
       ))}
 
       </div>
+      )}
 
-      {/* Logging takes the right-hand column: narrow, full height, with the four
-          days still readable beside it. The history yields the slot meanwhile. */}
-      {loggingKey ? (
-        <div style={{ ...card, padding: "12px 14px", minHeight: 0, display: "flex", flexDirection: "column" }}>
-          <LogSession
-            routineKey={loggingKey} config={routineConfig[loggingKey]} workouts={workouts} level={level} inline
-            onCancel={() => setScreen({ mode: "list" })}
-            onFinish={finishLog}
-          />
-        </div>
-      ) : (
       <div className={isWide ? "side-col" : undefined}
         style={{ marginTop: isWide ? undefined : (historyOpen ? 18 : 4), flexShrink: 0 }}>
         <button onClick={() => setHistoryOpen((v) => !v)} style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -1837,7 +1836,6 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
           </>
         )}
       </div>
-      )}
     </div>
   );
 }
@@ -2148,30 +2146,37 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
             const i = config.findIndex((s) => s.slotId === slotId);
             const slot = config[i];
             return (
-              <div key={slotId} style={{ paddingTop: si > 0 ? (inline ? 7 : 12) : 0, marginTop: si > 0 ? (inline ? 7 : 12) : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none" }}>
-                <div className="disp" style={{ fontSize: px(14), marginBottom: 2 }}>{slot.exercise}</div>
-                <div className="mono" style={{ fontSize: lp(11), color: "#C81E3A", marginBottom: 4 }}>
-                  {slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)} · target <MetaRow slot={slot} />{slot.note ? ` · ${slot.note}` : ""}
+              <div key={slotId} style={{
+                paddingTop: si > 0 ? (inline ? 7 : 12) : 0, marginTop: si > 0 ? (inline ? 7 : 12) : 0,
+                borderTop: si > 0 ? "1px solid #2A2D33" : "none",
+                /* Wide enough to read the exercise and fill it in on one line. */
+                display: inline ? "flex" : "block", alignItems: inline ? "center" : undefined, gap: inline ? 14 : 0,
+              }}>
+                <div style={{ flex: inline ? 1 : undefined, minWidth: 0 }}>
+                  <div className="disp" style={{ fontSize: lp(14), marginBottom: 2 }}>{slot.exercise}</div>
+                  <div className="mono" style={{ fontSize: lp(11), color: "#C81E3A", marginBottom: 4 }}>
+                    {slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)} · {t("target")} <MetaRow slot={slot} />{slot.note ? ` · ${slot.note}` : ""}
+                  </div>
+                  <PrevRecordLine workouts={workouts} routineKey={routineKey} slotId={slotId} />
                 </div>
-                <PrevRecordLine workouts={workouts} routineKey={routineKey} slotId={slotId} />
-                <div style={{ marginTop: 8 }} />
+                {!inline && <div style={{ marginTop: 8 }} />}
 
-                <div style={{ display: "block" }}>
-                <input type="number" placeholder={`${t("weight")} (${slot.weightUnit || "kg"})`} value={entries[i].weight} onChange={(e) => update(i, "weight", e.target.value)} style={{ ...input, marginBottom: 6, minWidth: 0, padding: inline ? "7px 8px" : undefined, fontSize: lp(14) }} />
+                <div style={{ display: inline ? "flex" : "block", gap: 6, width: inline ? 330 : undefined, flexShrink: 0 }}>
+                <input type="number" placeholder={`${t("weight")} (${slot.weightUnit || "kg"})`} value={entries[i].weight} onChange={(e) => update(i, "weight", e.target.value)} style={{ ...input, marginBottom: inline ? 0 : 6, minWidth: 0, width: inline ? 110 : undefined, padding: inline ? "7px 8px" : undefined, fontSize: lp(14) }} />
 
                 {slot.timeBased ? (
-                  <input type="number" placeholder={t("phSeconds")} value={entries[i].seconds} onChange={(e) => update(i, "seconds", e.target.value)} style={input} />
+                  <input type="number" placeholder={t("phSeconds")} value={entries[i].seconds} onChange={(e) => update(i, "seconds", e.target.value)} style={{ ...input, flex: inline ? 1 : undefined, minWidth: 0, fontSize: lp(14) }} />
                 ) : slot.protocol === "rest_pause" ? (
-                  <div style={{ display: "flex", gap: 6, minWidth: 0 }}>
+                  <div style={{ display: "flex", gap: 6, minWidth: 0, flex: 1 }}>
                     <input type="number" placeholder={t("phPositiveReps")} value={entries[i].repsBreakdown[0]} onChange={(e) => updateBreakdown(i, 0, e.target.value)} style={{ ...input, flex: 1 }} />
                     <input type="number" placeholder="+15s" value={entries[i].repsBreakdown[1]} onChange={(e) => updateBreakdown(i, 1, e.target.value)} style={{ ...input, flex: 1 }} />
                     <input type="number" placeholder="+15s" value={entries[i].repsBreakdown[2]} onChange={(e) => updateBreakdown(i, 2, e.target.value)} style={{ ...input, flex: 1 }} />
                   </div>
                 ) : (
-                  <div>
-                    <input type="number" placeholder={t("phPositiveReps")} value={entries[i].reps} onChange={(e) => update(i, "reps", e.target.value)} style={{ ...input, marginBottom: slot.protocol === "negativas" ? 8 : 0 }} />
+                  <div style={{ display: inline ? "flex" : "block", gap: 6, flex: 1, minWidth: 0 }}>
+                    <input type="number" placeholder={t("phPositiveReps")} value={entries[i].reps} onChange={(e) => update(i, "reps", e.target.value)} style={{ ...input, marginBottom: inline ? 0 : (slot.protocol === "negativas" ? 8 : 0), flex: inline ? 1 : undefined, minWidth: 0, fontSize: lp(14) }} />
                     {slot.protocol === "negativas" && (
-                      <input type="number" placeholder={t("phNegativeReps")} value={entries[i].negatives} onChange={(e) => update(i, "negatives", e.target.value)} style={input} />
+                      <input type="number" placeholder={t("phNegativeReps")} value={entries[i].negatives} onChange={(e) => update(i, "negatives", e.target.value)} style={{ ...input, flex: inline ? 1 : undefined, minWidth: 0, fontSize: lp(14) }} />
                     )}
                   </div>
                 )}
