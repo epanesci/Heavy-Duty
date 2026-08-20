@@ -1570,6 +1570,19 @@ function App() {
           .wide-grid { gap: 18px; }
         }
         ::selection { background: #C81E3A; color: #fff; }
+
+        /* Scrollbars in the app's own palette instead of the OS default. */
+        * { scrollbar-width: thin; scrollbar-color: #3A3F47 transparent; }
+        ::-webkit-scrollbar { width: 9px; height: 9px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+          background: #3A3F47;
+          border: 2px solid transparent;
+          background-clip: content-box;
+          border-radius: 6px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: #C81E3A; background-clip: content-box; }
+        ::-webkit-scrollbar-corner { background: transparent; }
       `}</style>
 
       <div className={isWide ? "hd-shell" : undefined}>
