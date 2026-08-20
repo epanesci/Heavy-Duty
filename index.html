@@ -1681,16 +1681,20 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
 
   const saveConfig = async (routineKey, slots) => {
     await setRoutineConfig({ ...routineConfig, [routineKey]: slots });
-    setScreen({ mode: "view", key: routineKey });
+    setScreen(isWide ? { mode: "list" } : { mode: "view", key: routineKey });
   };
 
+  // On desktop every day is already laid out on the main screen, so leaving a
+  // sub-screen returns straight there instead of to a single-day view.
+  const backFromSub = () => setScreen(isWide ? { mode: "list" } : { mode: "view", key: screen.key });
+
   if (screen.mode === "edit") {
-    return <RoutineEdit routineKey={screen.key} config={routineConfig[screen.key]} level={level} onCancel={() => setScreen({ mode: "view", key: screen.key })} onSave={saveConfig} />;
+    return <RoutineEdit routineKey={screen.key} config={routineConfig[screen.key]} level={level} onCancel={backFromSub} onSave={saveConfig} />;
   }
   if (screen.mode === "log") {
-    return <LogSession routineKey={screen.key} config={routineConfig[screen.key]} workouts={workouts} level={level} onCancel={() => setScreen({ mode: "view", key: screen.key })} onFinish={finishLog} />;
+    return <LogSession routineKey={screen.key} config={routineConfig[screen.key]} workouts={workouts} level={level} onCancel={backFromSub} onFinish={finishLog} />;
   }
-  if (screen.mode === "view") {
+  if (screen.mode === "view" && !isWide) {
     return <RoutineView routineKey={screen.key} config={routineConfig[screen.key]} workouts={workouts} level={level} onBack={() => setScreen({ mode: "list" })} onEdit={() => setScreen({ mode: "edit", key: screen.key })} onLog={() => setScreen({ mode: "log", key: screen.key })} />;
   }
 
