@@ -1691,9 +1691,12 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
   if (screen.mode === "edit") {
     return <RoutineEdit routineKey={screen.key} config={routineConfig[screen.key]} level={level} onCancel={backFromSub} onSave={saveConfig} />;
   }
-  if (screen.mode === "log") {
+  // On desktop logging happens in the days column, so the history stays put
+  // beside it — that is exactly what you compare against while filling it in.
+  if (screen.mode === "log" && !isWide) {
     return <LogSession routineKey={screen.key} config={routineConfig[screen.key]} workouts={workouts} level={level} onCancel={backFromSub} onFinish={finishLog} />;
   }
+  const loggingKey = isWide && screen.mode === "log" ? screen.key : null;
   if (screen.mode === "view" && !isWide) {
     return <RoutineView routineKey={screen.key} config={routineConfig[screen.key]} workouts={workouts} level={level} onBack={() => setScreen({ mode: "list" })} onEdit={() => setScreen({ mode: "edit", key: screen.key })} onLog={() => setScreen({ mode: "log", key: screen.key })} />;
   }
@@ -1702,6 +1705,15 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
     <div className={isWide ? "split-layout" : undefined}>
       {/* Days on the left; on a wide screen the history gets its own column
           instead of sitting far below the fold. */}
+      {loggingKey ? (
+        <div style={{ ...card, padding: "12px 14px", minHeight: 0, display: "flex", flexDirection: "column" }}>
+          <LogSession
+            routineKey={loggingKey} config={routineConfig[loggingKey]} workouts={workouts} level={level} inline
+            onCancel={() => setScreen({ mode: "list" })}
+            onFinish={finishLog}
+          />
+        </div>
+      ) : (
       <div className={isWide ? "wide-grid" : (historyOpen ? undefined : "fill-screen")}>
       {/* Desktop: every day is laid out in full, editable in place, so nothing
           needs to be opened just to be read. Mobile keeps the compact summary. */}
@@ -1755,6 +1767,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
       ))}
 
       </div>
+      )}
 
       <div className={isWide ? "side-col" : undefined}
         style={{ marginTop: isWide ? undefined : (historyOpen ? 18 : 4), flexShrink: 0 }}>
@@ -1990,8 +2003,8 @@ function RoutineEdit({ routineKey, config, level, onCancel, onSave }) {
   };
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+    <div className={inline ? "inline-card" : undefined}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexShrink: 0 }}>
         <button onClick={onCancel} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={px(20)} /></button>
         <span className="disp" style={{ fontSize: px(18), textTransform: "uppercase" }}>Edit Day {routineKey}</span>
       </div>
@@ -2073,7 +2086,7 @@ function RoutineEdit({ routineKey, config, level, onCancel, onSave }) {
   );
 }
 
-function LogSession({ routineKey, config, workouts, level, onCancel, onFinish }) {
+function LogSession({ routineKey, config, workouts, level, inline, onCancel, onFinish }) {
   const base = getRoutines(level)[routineKey];
   const groups = getGroups(routineKey, level);
   const [entries, setEntries] = useState(config.map((s) => ({
@@ -2095,8 +2108,8 @@ function LogSession({ routineKey, config, workouts, level, onCancel, onFinish })
   };
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+    <div className={inline ? "inline-card" : undefined}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexShrink: 0 }}>
         <button onClick={onCancel} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={px(20)} /></button>
         <div>
           <span className="disp" style={{ fontSize: px(18), textTransform: "uppercase" }}>Day {routineKey}</span>
@@ -2104,6 +2117,7 @@ function LogSession({ routineKey, config, workouts, level, onCancel, onFinish })
         </div>
       </div>
 
+      <div className={inline ? "inline-scroll" : undefined}>
       {groups.map((groupIds, gi) => (
         <div key={gi} style={{ ...card, marginBottom: 12, borderLeft: groupIds.length > 1 ? "3px solid #C81E3A" : undefined }}>
           {groupIds.length > 1 && (
@@ -2144,6 +2158,7 @@ function LogSession({ routineKey, config, workouts, level, onCancel, onFinish })
           })}
         </div>
       ))}
+      </div>
 
       <button onClick={() => {
         const cleaned = entries.map((e) => ({
@@ -2151,8 +2166,8 @@ function LogSession({ routineKey, config, workouts, level, onCancel, onFinish })
           reps: e.timeBased ? 0 : (e.protocol === "rest_pause" ? e.repsBreakdown.reduce((s, r) => s + (Number(r) || 0), 0) : Number(e.reps) || 0),
         }));
         onFinish(routineKey, cleaned);
-      }} style={{ ...btnPrimary, width: "100%", marginTop: 6 }}>
-        <Check size={px(16)} /> SAVE SESSION
+      }} style={{ ...btnPrimary, width: "100%", marginTop: 6, flexShrink: 0 }}>
+        <Check size={px(16)} /> {t("finishSession")}
       </button>
     </div>
   );
