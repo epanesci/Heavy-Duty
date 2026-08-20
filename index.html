@@ -1563,6 +1563,7 @@ function App() {
           .split-layout > .wide-grid { min-height: 0; }
           .split-layout > .wide-grid > * { min-height: 0; }
           .side-col { margin-top: 0; min-height: 0; overflow-y: auto; padding-right: 4px; }
+          .split-left { min-height: 0; overflow-y: auto; padding-right: 4px; }
         }
         @media (min-width: 1360px) {
           .split-layout { grid-template-columns: minmax(0, 1fr) 400px; gap: 22px; }
@@ -2532,6 +2533,7 @@ function SubTab({ label, active, onClick }) {
 }
 
 function BodyComposition({ bodystats, setBodystats }) {
+  const isWide = useIsWide();
   const [weight, setWeight] = useState("");
   const [bodyFat, setBodyFat] = useState("");
   const [height, setHeight] = useState("190");
@@ -2551,7 +2553,8 @@ function BodyComposition({ bodystats, setBodystats }) {
   const latestCalc = ffmiData[ffmiData.length - 1];
 
   return (
-    <div>
+    <div className={isWide ? "split-layout" : undefined}>
+      <div className={isWide ? "split-left" : undefined}>
       <div style={card}>
         <input type="number" placeholder={t("height")} value={height} onChange={(e) => setHeight(e.target.value)} style={{ ...input, marginBottom: 8 }} />
         <div style={{ display: "flex", gap: 10 }}>
@@ -2571,7 +2574,7 @@ function BodyComposition({ bodystats, setBodystats }) {
       {ffmiData.length >= 2 && CHARTS_OK ? (
         <div style={{ ...card, padding: "18px 8px 8px", marginTop: 16 }}>
           <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", padding: "0 8px 8px" }}>{t("bodyWeightKg")}</div>
-          <ResponsiveContainer width="100%" height={180}>
+          <ResponsiveContainer width="100%" height={isWide ? 300 : 180}>
             <LineChart data={ffmiData}>
               <CartesianGrid stroke="#2A2D33" vertical={false} />
               <XAxis dataKey="label" stroke="#8A8D93" fontSize={10} />
@@ -2585,8 +2588,10 @@ function BodyComposition({ bodystats, setBodystats }) {
         <p className="mono" style={{ color: "#8A8D93", fontSize: px(12), textAlign: "center", padding: 24 }}>{t("needTwoMeasurements")}</p>
       )}
 
+      </div>
+
       {ffmiData.length > 0 && (
-        <div style={{ marginTop: 16 }}>
+        <div className={isWide ? "side-col" : undefined} style={{ marginTop: isWide ? 0 : 16 }}>
           <SectionLabel>{t("measurementHistory")}</SectionLabel>
           {ffmiData.slice().reverse().map((b) => (
             <div key={b.id} style={{ ...card, marginBottom: 8, padding: "12px 14px" }}>
@@ -2618,6 +2623,7 @@ function StatCard({ value, label }) {
 }
 
 function Performance({ workouts }) {
+  const isWide = useIsWide();
   const allExercises = useMemo(() => {
     const set = new Set();
     workouts.forEach((w) => w.entries.forEach((e) => { if (e.weight) set.add(e.exercise); }));
@@ -2649,14 +2655,15 @@ function Performance({ workouts }) {
   const unit = points.length > 0 ? points[0].weightUnit : "kg";
 
   return (
-    <div>
+    <div className={isWide ? "split-layout" : undefined}>
+      <div className={isWide ? "split-left" : undefined}>
       <select value={exercise} onChange={(e) => setExercise(e.target.value)} style={{ ...input, marginBottom: 16 }}>
         {allExercises.map((ex) => <option key={ex} value={ex}>{ex}</option>)}
       </select>
       {points.length >= 2 && CHARTS_OK ? (
         <div style={{ ...card, padding: "18px 8px 8px" }}>
           <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", padding: "0 8px 8px" }}>{isTimeBased ? t("secondsHeld") : `${t("theoretical1RM")} (${unit.toUpperCase()})`}</div>
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height={isWide ? 320 : 200}>
             <LineChart data={points}>
               <CartesianGrid stroke="#2A2D33" vertical={false} />
               <XAxis dataKey="label" stroke="#8A8D93" fontSize={10} />
@@ -2670,8 +2677,10 @@ function Performance({ workouts }) {
         <p className="mono" style={{ color: "#8A8D93", fontSize: px(12), textAlign: "center", padding: 24 }}>{t("needTwoSessions")}</p>
       )}
 
+      </div>
+
       {points.length > 0 && (
-        <div style={{ marginTop: 16 }}>
+        <div className={isWide ? "side-col" : undefined} style={{ marginTop: isWide ? 0 : 16 }}>
           <SectionLabel>{t("historyFor")} {shortName(exercise)}</SectionLabel>
           {points.slice().reverse().map((p, i) => (
             <div key={i} style={{ ...card, marginBottom: 8, padding: "12px 14px" }}>
