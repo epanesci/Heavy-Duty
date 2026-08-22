@@ -212,6 +212,8 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
+const BUILD = "0822-1635";
+
 let SCALE = 1;
 function px(n) {
   return SCALE === 1 ? n : Math.round(n * SCALE);
@@ -1367,6 +1369,9 @@ function SettingsScreen({ settings, setSettings, onExport, onImport, onReset, on
       <button onClick={onReset} style={{ ...btnGhost, width: "100%", color: "#C81E3A", borderColor: "#C81E3A" }}>
         <Trash2 size={px(16)} /> {t("resetApp")}
       </button>
+
+      {/* Which build is actually running — settles "did my upload land?". */}
+      <div className="mono" style={{ fontSize: px(10), color: "#3A3F47", textAlign: "center", marginTop: 14 }}>build {BUILD}</div>
     </div>
   );
 }
