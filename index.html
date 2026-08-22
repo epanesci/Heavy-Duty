@@ -2093,22 +2093,22 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
                 </div>
                 {!inline && <div style={{ marginTop: 8 }} />}
 
-                <div style={{ display: inline ? "flex" : "block", gap: 6, width: inline ? 330 : undefined, flexShrink: 0 }}>
-                <input type="number" placeholder={slot.weightUnit || "kg"} value={entries[i].weight} onChange={(e) => update(i, "weight", e.target.value)} style={{ ...input, marginBottom: inline ? 0 : 6, minWidth: 0, width: inline ? 110 : undefined, padding: inline ? "7px 8px" : undefined, fontSize: lp(14) }} />
+                <div style={{ display: "flex", gap: 6, width: inline ? 330 : undefined, flexShrink: 0 }}>
+                <input type="number" placeholder={slot.weightUnit || "kg"} value={entries[i].weight} onChange={(e) => update(i, "weight", e.target.value)} style={{ ...input, marginBottom: 0, minWidth: 0, width: inline ? 110 : 84, flexShrink: 0, padding: inline ? "7px 8px" : undefined, fontSize: lp(14) }} />
 
                 {slot.timeBased ? (
-                  <input type="number" placeholder={t("phSeconds")} value={entries[i].seconds} onChange={(e) => update(i, "seconds", e.target.value)} style={{ ...input, flex: inline ? 1 : undefined, minWidth: 0, fontSize: lp(14) }} />
+                  <input type="number" placeholder={t("phSeconds")} value={entries[i].seconds} onChange={(e) => update(i, "seconds", e.target.value)} style={{ ...input, flex: 1, minWidth: 0, fontSize: lp(14) }} />
                 ) : slot.protocol === "rest_pause" ? (
                   <div style={{ display: "flex", gap: 6, minWidth: 0, flex: 1 }}>
-                    <input type="number" placeholder={t("phPositiveReps")} value={entries[i].repsBreakdown[0]} onChange={(e) => updateBreakdown(i, 0, e.target.value)} style={{ ...input, flex: 1 }} />
-                    <input type="number" placeholder="+15s" value={entries[i].repsBreakdown[1]} onChange={(e) => updateBreakdown(i, 1, e.target.value)} style={{ ...input, flex: 1 }} />
-                    <input type="number" placeholder="+15s" value={entries[i].repsBreakdown[2]} onChange={(e) => updateBreakdown(i, 2, e.target.value)} style={{ ...input, flex: 1 }} />
+                    <input type="number" placeholder={t("phPositiveReps")} value={entries[i].repsBreakdown[0]} onChange={(e) => updateBreakdown(i, 0, e.target.value)} style={{ ...input, flex: 1, minWidth: 0, fontSize: lp(14) }} />
+                    <input type="number" placeholder="+15s" value={entries[i].repsBreakdown[1]} onChange={(e) => updateBreakdown(i, 1, e.target.value)} style={{ ...input, flex: 1, minWidth: 0, fontSize: lp(14) }} />
+                    <input type="number" placeholder="+15s" value={entries[i].repsBreakdown[2]} onChange={(e) => updateBreakdown(i, 2, e.target.value)} style={{ ...input, flex: 1, minWidth: 0, fontSize: lp(14) }} />
                   </div>
                 ) : (
-                  <div style={{ display: inline ? "flex" : "block", gap: 6, flex: 1, minWidth: 0 }}>
-                    <input type="number" placeholder={t("phPositiveReps")} value={entries[i].reps} onChange={(e) => update(i, "reps", e.target.value)} style={{ ...input, marginBottom: inline ? 0 : (slot.protocol === "negativas" ? 8 : 0), flex: inline ? 1 : undefined, minWidth: 0, fontSize: lp(14) }} />
+                  <div style={{ display: "flex", gap: 6, flex: 1, minWidth: 0 }}>
+                    <input type="number" placeholder={t("phPositiveReps")} value={entries[i].reps} onChange={(e) => update(i, "reps", e.target.value)} style={{ ...input, marginBottom: 0, flex: 1, minWidth: 0, fontSize: lp(14) }} />
                     {slot.protocol === "negativas" && (
-                      <input type="number" placeholder={t("phNegativeReps")} value={entries[i].negatives} onChange={(e) => update(i, "negatives", e.target.value)} style={{ ...input, flex: inline ? 1 : undefined, minWidth: 0, fontSize: lp(14) }} />
+                      <input type="number" placeholder={t("phNegativeReps")} value={entries[i].negatives} onChange={(e) => update(i, "negatives", e.target.value)} style={{ ...input, flex: 1, minWidth: 0, fontSize: lp(14) }} />
                     )}
                   </div>
                 )}
