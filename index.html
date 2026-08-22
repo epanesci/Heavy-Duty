@@ -285,7 +285,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0822-1948";
+const BUILD = "0822-1951";
 
 let SCALE = 1;
 function px(n) {
@@ -1581,7 +1581,8 @@ function App() {
         .app-root > .hd-shell > .hd-body > header { flex: 0 0 auto; }
 
         /* A screen that fills the content band exactly. */
-        .fill-screen { display: flex; flex-direction: column; justify-content: space-between; height: 100%; }
+        .screen-root { height: 100%; display: flex; flex-direction: column; }
+        .fill-screen { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; }
         .fill-screen > .grow { flex: 0 1 auto; min-height: 0; overflow: hidden; }
 
         /* ---------- Desktop: side rail instead of a bottom bar ---------- */
@@ -1815,7 +1816,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
   }
   const loggingKey = isWide && screen.mode === "log" ? screen.key : null;
   return (
-    <div className={isWide ? "split-layout" : undefined}>
+    <div className={isWide ? "split-layout" : "screen-root"}>
       {!isWide && (
         <div className="mono" style={{ position: "fixed", top: 2, right: 4, zIndex: 99, fontSize: 9, color: "#C81E3A" }}>
           x{fitScale} · vh{(window.__fit && window.__fit.vh) || "?"} root{(window.__fit && window.__fit.root) || "?"} main{(window.__fit && window.__fit.main) || "?"} h{(window.__fit && window.__fit.head) || "?"} n{(window.__fit && window.__fit.nav) || "?"} band{(window.__fit && window.__fit.avail) || "?"}
@@ -2240,12 +2241,12 @@ function Food({ mealPlans, setMealPlans }) {
   }, { kcal: 0, carbs: 0, protein: 0, fat: 0, fiber: 0 });
 
   return (
-    <div className={isWide ? "food-screen" : undefined}>
+    <div className={isWide ? "food-screen" : "screen-root"}>
       {/* Mobile: the four meals fill one screen and the total sits below the
           fold on purpose. Desktop: everything shares one screen, no scrolling. */}
       {/* Ends short of the nav bar so meal D doesn't sit flush against it. */}
       <div ref={isWide ? undefined : fitOuter} className={isWide ? "wide-grid" : "fill-screen"}
-        style={isWide ? undefined : { height: "calc(100% - 22px)" }}>
+        style={isWide ? undefined : { marginBottom: 18 }}>
       <div ref={isWide ? undefined : fitInner}
         style={isWide
           // display:contents lets the grid see the cards, not this wrapper.
