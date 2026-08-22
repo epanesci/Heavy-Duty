@@ -220,8 +220,16 @@ function useFitScale(deps) {
       if (!avail) return;
 
       el.style.height = "auto";
-      el.style.zoom = 1;
-      const natural = el.scrollHeight;
+      el.style.zoom = "1";
+      // Sum the children directly: the wrapper is a flex item, so its own
+      // height can stay pinned to the container even with height:auto.
+      let childSum = 0;
+      for (const kid of el.children) {
+        const cs = window.getComputedStyle(kid);
+        childSum += kid.getBoundingClientRect().height
+          + parseFloat(cs.marginTop || 0) + parseFloat(cs.marginBottom || 0);
+      }
+      const natural = childSum || el.scrollHeight;
       if (!natural) return;
 
       let s = avail / natural;
@@ -234,7 +242,7 @@ function useFitScale(deps) {
         s *= off;
       }
       s = Math.min(2.2, Math.max(0.8, s));
-      window.__fit = { avail, natural, scale: Number(s.toFixed(3)) };
+      window.__fit = { avail, natural: Math.round(natural), sh: el.scrollHeight, scale: Number(s.toFixed(3)) };
 
       el.style.zoom = "";
       el.style.height = "";
@@ -268,7 +276,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0822-1943";
+const BUILD = "0822-1946";
 
 let SCALE = 1;
 function px(n) {
@@ -1801,7 +1809,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
     <div className={isWide ? "split-layout" : undefined}>
       {!isWide && (
         <div className="mono" style={{ position: "fixed", top: 2, right: 4, zIndex: 99, fontSize: 9, color: "#C81E3A" }}>
-          x{fitScale} · {(window.__fit && window.__fit.avail) || "?"}/{(window.__fit && window.__fit.natural) || "?"}
+          x{fitScale} · {(window.__fit && window.__fit.avail) || "?"}/{(window.__fit && window.__fit.natural) || "?"}/{(window.__fit && window.__fit.sh) || "?"}
         </div>
       )}
       {/* Days on the left; on a wide screen the history gets its own column
