@@ -242,7 +242,16 @@ function useFitScale(deps) {
         s *= off;
       }
       s = Math.min(2.2, Math.max(0.8, s));
-      window.__fit = { avail, natural: Math.round(natural), sh: el.scrollHeight, scale: Number(s.toFixed(3)) };
+      // Where does the viewport actually go?
+      const q = (sel) => {
+        const n = document.querySelector(sel);
+        return n ? Math.round(n.getBoundingClientRect().height) : 0;
+      };
+      window.__fit = {
+        avail, natural: Math.round(natural), scale: Number(s.toFixed(3)),
+        vh: window.innerHeight, root: q(".app-root"), main: q(".hd-main"),
+        head: q("header"), nav: q(".hd-nav"),
+      };
 
       el.style.zoom = "";
       el.style.height = "";
@@ -276,7 +285,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0822-1946";
+const BUILD = "0822-1948";
 
 let SCALE = 1;
 function px(n) {
@@ -1809,7 +1818,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
     <div className={isWide ? "split-layout" : undefined}>
       {!isWide && (
         <div className="mono" style={{ position: "fixed", top: 2, right: 4, zIndex: 99, fontSize: 9, color: "#C81E3A" }}>
-          x{fitScale} · {(window.__fit && window.__fit.avail) || "?"}/{(window.__fit && window.__fit.natural) || "?"}/{(window.__fit && window.__fit.sh) || "?"}
+          x{fitScale} · vh{(window.__fit && window.__fit.vh) || "?"} root{(window.__fit && window.__fit.root) || "?"} main{(window.__fit && window.__fit.main) || "?"} h{(window.__fit && window.__fit.head) || "?"} n{(window.__fit && window.__fit.nav) || "?"} band{(window.__fit && window.__fit.avail) || "?"}
         </div>
       )}
       {/* Days on the left; on a wide screen the history gets its own column
