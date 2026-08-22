@@ -1731,28 +1731,16 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
     setScreen({ mode: "list" });
   };
 
-  const saveConfig = async (routineKey, slots) => {
-    await setRoutineConfig({ ...routineConfig, [routineKey]: slots });
-    setScreen(isWide ? { mode: "list" } : { mode: "view", key: routineKey });
-  };
-
   // On desktop every day is already laid out on the main screen, so leaving a
   // sub-screen returns straight there instead of to a single-day view.
-  const backFromSub = () => setScreen(isWide ? { mode: "list" } : { mode: "view", key: screen.key });
+  const backFromSub = () => setScreen({ mode: "list" });
 
-  if (screen.mode === "edit") {
-    return <RoutineEdit routineKey={screen.key} config={routineConfig[screen.key]} level={level} onCancel={backFromSub} onSave={saveConfig} />;
-  }
   // On desktop logging happens in the days column, so the history stays put
   // beside it — that is exactly what you compare against while filling it in.
   if (screen.mode === "log" && !isWide) {
     return <LogSession routineKey={screen.key} config={routineConfig[screen.key]} workouts={workouts} level={level} onCancel={backFromSub} onFinish={finishLog} onSaveTargets={saveTargets} />;
   }
   const loggingKey = isWide && screen.mode === "log" ? screen.key : null;
-  if (screen.mode === "view" && !isWide) {
-    return <RoutineView routineKey={screen.key} config={routineConfig[screen.key]} workouts={workouts} level={level} onBack={() => setScreen({ mode: "list" })} onEdit={() => setScreen({ mode: "edit", key: screen.key })} onLog={() => setScreen({ mode: "log", key: screen.key })} />;
-  }
-
   return (
     <div className={isWide ? "split-layout" : undefined}>
       {/* Days on the left; on a wide screen the history gets its own column
@@ -2037,102 +2025,6 @@ function RoutineView({ routineKey, config, workouts, level, inline, suggested, r
           <Plus size={px(16)} /> {t("logSession")}
         </button>
       )}
-    </div>
-  );
-}
-
-function RoutineEdit({ routineKey, config, level, onCancel, onSave }) {
-  const base = getRoutines(level)[routineKey];
-  const groups = getGroups(routineKey, level);
-  const [slots, setSlots] = useState(config.map((s) => ({ ...s })));
-
-  const idxOf = (slotId) => slots.findIndex((s) => s.slotId === slotId);
-  const update = (idx, field, val) => {
-    const next = slots.slice();
-    next[idx] = { ...next[idx], [field]: val };
-    setSlots(next);
-  };
-
-  return (
-    <div className={inline ? "inline-card" : undefined}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexShrink: 0 }}>
-        <button onClick={onCancel} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={px(20)} /></button>
-        <span className="disp" style={{ fontSize: px(18), textTransform: "uppercase" }}>Edit Day {routineKey}</span>
-      </div>
-
-      {groups.map((groupIds, gi) => (
-        <div key={gi} style={{ ...card, marginBottom: 12, borderLeft: groupIds.length > 1 ? "3px solid #C81E3A" : undefined }}>
-          {groupIds.length > 1 && (
-            <div className="mono" style={{ fontSize: px(10), color: "#C81E3A", letterSpacing: 1, marginBottom: 10 }}>{t("superset")}</div>
-          )}
-          {groupIds.map((slotId, si) => {
-            const slotDef = base.slots.find((s) => s.id === slotId);
-            const i = idxOf(slotId);
-            return (
-              <div key={slotId} style={{ paddingTop: si > 0 ? 12 : 0, marginTop: si > 0 ? 12 : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none" }}>
-                <div className="disp" style={{ fontSize: px(14), textTransform: "uppercase", marginBottom: 8 }}>{tx(slotDef.name)}</div>
-                <select value={slots[i].exercise} onChange={(e) => update(i, "exercise", e.target.value)} style={{ ...input, marginBottom: 8 }}>
-                  {slotDef.options.map((o) => <option key={o} value={o}>{o}</option>)}
-                </select>
-
-                <input type="number" placeholder={`Target weight (${slotDef.weightUnit || "kg"})`} value={slots[i].targetWeight} onChange={(e) => update(i, "targetWeight", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, marginBottom: 8 }} />
-
-                {slotDef.isTimeBased ? (
-                  <>
-                    <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", marginBottom: 8 }}>{t("holdToFailure")}</div>
-                    <input type="number" placeholder={t("phTargetSeconds")} value={slots[i].targetSeconds} onChange={(e) => update(i, "targetSeconds", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, marginBottom: 8 }} />
-                  </>
-                ) : slotDef.isPreagotamiento ? (
-                  <>
-                    <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", marginBottom: 8 }}>{tx(PROTOCOLS.fallo.desc)}</div>
-                    <input type="number" placeholder={t("phTargetReps")} value={slots[i].targetReps} onChange={(e) => update(i, "targetReps", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, marginBottom: 8 }} />
-                  </>
-                ) : (
-                  <>
-                    <select value={slots[i].protocol} onChange={(e) => update(i, "protocol", e.target.value)} style={{ ...input, marginBottom: 8 }}>
-                      <option value="rest_pause">{tx("Rest-pause")}</option>
-                      <option value="negativas">{tx("Negatives")}</option>
-                      <option value="submax">{tx("Sub-maximal (not to failure)")}</option>
-                    </select>
-
-                    {slots[i].protocol === "rest_pause" ? (
-                      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                        <input type="number" placeholder={t("phTargetReps")} value={slots[i].targetReps} onChange={(e) => update(i, "targetReps", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, flex: 1 }} />
-                        <input type="number" placeholder={t("phExtra")} value={slots[i].targetExtra1} onChange={(e) => update(i, "targetExtra1", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, flex: 1 }} />
-                        <input type="number" placeholder={t("phExtra")} value={slots[i].targetExtra2} onChange={(e) => update(i, "targetExtra2", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, flex: 1 }} />
-                      </div>
-                    ) : slots[i].protocol === "submax" ? (
-                      <input type="number" placeholder={t("phTargetReps")} value={slots[i].targetReps} onChange={(e) => update(i, "targetReps", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, marginBottom: 8 }} />
-                    ) : (
-                      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                        <input type="number" placeholder={t("phTargetReps")} value={slots[i].targetReps} onChange={(e) => update(i, "targetReps", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, flex: 1 }} />
-                        <input type="number" placeholder={t("phTargetNegatives")} value={slots[i].targetNegatives} onChange={(e) => update(i, "targetNegatives", e.target.value === "" ? "" : Number(e.target.value))} style={{ ...input, flex: 1 }} />
-                      </div>
-                    )}
-                  </>
-                )}
-
-                <input placeholder={t("note")} value={slots[i].note || ""} onChange={(e) => update(i, "note", e.target.value)} style={input} />
-              </div>
-            );
-          })}
-        </div>
-      ))}
-
-      <button onClick={() => {
-        const sanitized = slots.map((s) => ({
-          ...s,
-          targetWeight: s.targetWeight === "" || isNaN(Number(s.targetWeight)) ? 0 : Number(s.targetWeight),
-          targetReps: s.targetReps === "" || isNaN(Number(s.targetReps)) ? 1 : Number(s.targetReps),
-          targetNegatives: s.targetNegatives === "" || isNaN(Number(s.targetNegatives)) ? 0 : Number(s.targetNegatives),
-          targetExtra1: s.targetExtra1 === "" || isNaN(Number(s.targetExtra1)) ? 0 : Number(s.targetExtra1),
-          targetExtra2: s.targetExtra2 === "" || isNaN(Number(s.targetExtra2)) ? 0 : Number(s.targetExtra2),
-          targetSeconds: s.targetSeconds === "" || isNaN(Number(s.targetSeconds)) ? 0 : Number(s.targetSeconds),
-        }));
-        onSave(routineKey, sanitized);
-      }} style={{ ...btnPrimary, width: "100%", marginTop: 6 }}>
-        <Check size={px(16)} /> {t("saveDay")}
-      </button>
     </div>
   );
 }
