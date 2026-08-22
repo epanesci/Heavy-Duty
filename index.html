@@ -2186,7 +2186,7 @@ function Food({ mealPlans, setMealPlans }) {
         }, { kcal: 0, carbs: 0, protein: 0, fat: 0, fiber: 0 });
         return (
           <button key={key} onClick={() => setOpenPlan(key)} className={isWide ? undefined : "grow"}
-            style={{ ...card, padding: "10px 12px", marginBottom: isWide ? 0 : 8, width: "100%", textAlign: "left", cursor: "pointer", display: "block" }}>
+            style={{ ...card, padding: isWide ? "10px 12px" : "8px 10px", marginBottom: isWide ? 0 : 8, width: "100%", textAlign: "left", cursor: "pointer", display: "block" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span className="disp" style={{ fontSize: px(16), fontWeight: 700, textTransform: "uppercase" }}>{t("meal")} {key}{plan.label ? <span className="mono" style={{ fontSize: px(11), color: "#8A8D93", textTransform: "none", fontWeight: 400 }}> · {plan.label}</span> : null}</span>
               <ChevronRight size={px(16)} color="#8A8D93" style={{ flexShrink: 0 }} />
@@ -2194,7 +2194,7 @@ function Food({ mealPlans, setMealPlans }) {
             {(plan.items || []).length === 0 ? (
               <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", marginTop: 6 }}>{t("noFoodsLogged")}</div>
             ) : (
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: 5, gap: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: 3, gap: 10 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {(plan.items || []).map((it) => (
                     <div key={it.id} className="mono" style={{ fontSize: px(11), color: "#8A8D93", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -2745,7 +2745,7 @@ function SectionLabel({ children }) {
 }
 
 const card = { background: "#1E2126", border: "1px solid #2A2D33", padding: 14 };
-const input = { width: "100%", background: "#14161A", border: "1px solid #3A3F47", color: "#E8E6E1", padding: "6px 10px", fontSize: px(14) };
+const input = { width: "100%", background: "#14161A", border: "1px solid #3A3F47", color: "#E8E6E1", padding: "10px 12px", fontSize: px(14) };
 const btnPrimary = { background: "#C81E3A", color: "#fff", border: "none", padding: "12px 20px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "'Oswald', sans-serif", fontWeight: 600, letterSpacing: 0.5, cursor: "pointer" };
 const btnGhost = { background: "none", color: "#8A8D93", border: "1px solid #3A3F47", padding: "12px 20px", fontFamily: "'Oswald', sans-serif", fontWeight: 600, letterSpacing: 0.5, cursor: "pointer" };
 
