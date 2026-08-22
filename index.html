@@ -212,7 +212,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0822-1635";
+const BUILD = "0822-1639";
 
 let SCALE = 1;
 function px(n) {
@@ -1519,7 +1519,7 @@ function App() {
           height: calc(var(--hd-vh) - var(--hd-header) - var(--hd-nav) - var(--hd-mainpad));
           min-height: 320px;
         }
-        .fill-screen > .grow { flex: 1 1 0; min-height: 0; overflow: hidden; }
+        .fill-screen > .grow { flex: 0 1 auto; min-height: 0; overflow: hidden; }
 
         /* ---------- Desktop: side rail instead of a bottom bar ---------- */
         @media (min-width: 900px) {
@@ -2333,7 +2333,7 @@ function FoodRowEditor({ item, compact, onChange, onDelete, onDone }) {
     });
   };
 
-  const num = { ...input, padding: compact ? "8px 6px" : "5px 6px", fontSize: compact ? 14 : 12, width: "100%", textAlign: "center" };
+  const num = { ...input, padding: compact ? "9px 6px" : "5px 6px", fontSize: compact ? 14 : 12, width: "100%", textAlign: "center" };
   const hits = searchFoods(query);
 
   return (
@@ -2346,7 +2346,7 @@ function FoodRowEditor({ item, compact, onChange, onDelete, onDone }) {
           value={query || draft.name}
           placeholder={t("phFood")}
           onChange={(e) => { setQuery(e.target.value); commit({ name: e.target.value }); }}
-          style={{ ...input, padding: "5px 8px", fontSize: px(14), flex: compact ? "1 0 100%" : 1, minWidth: 0, marginBottom: compact ? 6 : 0 }}
+          style={{ ...input, padding: compact ? "9px 11px" : "5px 8px", fontSize: px(14), flex: compact ? "1 0 100%" : 1, minWidth: 0, marginBottom: compact ? 6 : 0 }}
         />
         {/* The field holds the number only; the unit is shown next to it. */}
         <div style={{ position: "relative", width: compact ? 110 : px(86), flexShrink: 0 }}>
@@ -2356,7 +2356,7 @@ function FoodRowEditor({ item, compact, onChange, onDelete, onDone }) {
             value={qty}
             placeholder={t("amount")}
             onChange={(e) => onQty(e.target.value)}
-            style={{ ...input, padding: "5px 24px 5px 8px", fontSize: px(13), width: "100%" }}
+            style={{ ...input, padding: compact ? "9px 26px 9px 11px" : "5px 24px 5px 8px", fontSize: px(13), width: "100%" }}
           />
           {unit && (
             <span className="mono" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: px(11), color: "#8A8D93", pointerEvents: "none" }}>{unit}</span>
