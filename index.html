@@ -247,7 +247,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0822-1733";
+const BUILD = "0822-1737";
 
 let SCALE = 1;
 function px(n) {
@@ -1792,7 +1792,10 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
       ) : (
       <div ref={isWide ? undefined : fitOuter} className={isWide ? "wide-grid" : (historyOpen ? undefined : "fill-screen")}>
       <div ref={isWide ? undefined : fitInner}
-        style={isWide ? undefined : { zoom: fitScale, height: `calc(100% / ${fitScale})`, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        style={isWide
+          // display:contents lets the grid see the cards, not this wrapper.
+          ? { display: "contents" }
+          : { zoom: fitScale, height: `calc(100% / ${fitScale})`, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
       {/* Desktop: every day is laid out in full, editable in place, so nothing
           needs to be opened just to be read. Mobile keeps the compact summary. */}
       {isWide ? cycle.map((key) => (
@@ -2201,7 +2204,10 @@ function Food({ mealPlans, setMealPlans }) {
       <div ref={isWide ? undefined : fitOuter} className={isWide ? "wide-grid" : "fill-screen"}
         style={isWide ? undefined : { height: "calc(100% - 22px)" }}>
       <div ref={isWide ? undefined : fitInner}
-        style={isWide ? undefined : { zoom: fitScale, height: `calc(100% / ${fitScale})`, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        style={isWide
+          // display:contents lets the grid see the cards, not this wrapper.
+          ? { display: "contents" }
+          : { zoom: fitScale, height: `calc(100% / ${fitScale})`, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
       {isWide ? MEAL_KEYS.map((key) => (
         <div key={key} style={{ ...card, padding: "10px 12px" }}>
           <MealPlanDetail
