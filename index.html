@@ -206,20 +206,39 @@ function useFitScale(deps) {
   const [scale, setScale] = useState(1);
 
   React.useLayoutEffect(() => {
+    let alive = true;
     const measure = () => {
-      if (!outer.current || !inner.current) return;
+      if (!alive || !outer.current || !inner.current) return;
       const avail = outer.current.clientHeight;
       // Measure at 1:1, otherwise the previous factor skews the reading.
       inner.current.style.zoom = 1;
       inner.current.style.height = "auto";
       const natural = inner.current.scrollHeight;
       if (!avail || !natural) return;
-      const next = Math.min(1.6, Math.max(1, (avail / natural) * 0.995));
+      const next = Math.min(1.6, Math.max(1, (avail / natural) * 0.98));
       setScale(Number(next.toFixed(3)));
     };
+
     measure();
+    // The first pass runs before the web fonts arrive, so the text is measured
+    // in a fallback face and comes out short — hence the overlap on a cold open.
+    const raf = requestAnimationFrame(measure);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+    const timer = setTimeout(measure, 400);
+
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    let ro;
+    if (window.ResizeObserver) {
+      ro = new ResizeObserver(() => requestAnimationFrame(measure));
+      if (inner.current) ro.observe(inner.current);
+    }
+    return () => {
+      alive = false;
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+      window.removeEventListener("resize", measure);
+      if (ro) ro.disconnect();
+    };
   }, [deps]);
 
   return [outer, inner, scale];
@@ -239,7 +258,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0822-1645";
+const BUILD = "0822-1650";
 
 let SCALE = 1;
 function px(n) {
