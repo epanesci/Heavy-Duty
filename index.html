@@ -200,6 +200,8 @@ const STRINGS = {
 
 // Grows the type until the cards fill the screen. Content varies (a day may
 // hold two exercises or five), so the factor is measured rather than guessed.
+// The content band has a height of its own, so this only asks: how much bigger
+// (or smaller) can the type be for the cards to fill it exactly?
 function useFitScale(deps) {
   const outer = React.useRef(null);
   const inner = React.useRef(null);
@@ -210,22 +212,17 @@ function useFitScale(deps) {
     const measure = () => {
       if (!alive || !outer.current || !inner.current) return;
       const avail = outer.current.clientHeight;
-      // Measure at 1:1, otherwise the previous factor skews the reading.
+      // Read at 1:1 so the factor already applied doesn't skew the measurement.
       inner.current.style.zoom = 1;
       inner.current.style.height = "auto";
       const natural = inner.current.scrollHeight;
       if (!avail || !natural) return;
-      const next = Math.min(1.6, Math.max(1, (avail / natural) * 0.995));
-      setScale(Number(next.toFixed(3)));
+      setScale(Number(Math.min(1.7, Math.max(0.8, avail / natural)).toFixed(3)));
     };
 
     measure();
-    // The first pass runs before the web fonts arrive, so the text is measured
-    // in a fallback face and the cards end up overlapping the nav bar. One
-    // re-measure once the real fonts are in fixes it; nothing else re-runs,
-    // since repeated passes fight the zoom that was just applied.
+    // Web fonts land after the first paint and change every text metric.
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
-
     window.addEventListener("resize", measure);
     return () => {
       alive = false;
@@ -250,7 +247,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0822-1653";
+const BUILD = "0822-1657";
 
 let SCALE = 1;
 function px(n) {
@@ -1530,41 +1527,25 @@ function App() {
            dvh follows the mobile browser chrome as it hides/shows. */
         /* Measured from the real header/nav paddings; the nav grows with the
            phone's gesture bar, so its inset is part of the calculation. */
-        :root {
-          /* Everything vertical is measured against --hd-vh instead of 100dvh:
-             when the desktop layout is zoomed, the viewport it can use shrinks
-             by the same factor, otherwise the fixed-height screens overflow. */
-          --hd-vh: 100dvh;
-          --hd-header: 53px;
-          --hd-nav: calc(64px + max(0px, env(safe-area-inset-bottom) - 8px));
-          --hd-mainpad: 12px; /* only main's top padding reduces the visible area */
-        }
-        /* The content area owns the scrolling and has an exact height, so the
-           bottom nav stays put and nothing ever slides under it. */
-        html, body { overflow: hidden; overscroll-behavior: none; }
-        .hd-main {
-          height: calc(var(--hd-vh) - var(--hd-header) - var(--hd-nav));
-          box-sizing: border-box;
-          overflow-y: auto;
-          -webkit-overflow-scrolling: touch;
-        }
-        /* A screen that fills exactly the visible area, no more, no less.
-           Sized from the viewport rather than the parent: a percentage height
-           collapses when any ancestor is auto-height. */
-        .fill-screen {
-          display: flex;
-          flex-direction: column;
-          height: calc(var(--hd-vh) - var(--hd-header) - var(--hd-nav) - var(--hd-mainpad));
-          min-height: 320px;
-        }
+        /* Three bands: header, content, nav. The middle one is whatever the
+           other two leave over — measured by the browser, not by constants,
+           so changing the type size can never make them overlap. */
+        .app-root { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        .hd-shell { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+        .hd-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+        .hd-main { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+        .hd-nav { flex: 0 0 auto; }
+        .app-root > .hd-shell > .hd-body > header { flex: 0 0 auto; }
+
+        /* A screen that fills the content band exactly. */
+        .fill-screen { display: flex; flex-direction: column; justify-content: space-between; height: 100%; }
         .fill-screen > .grow { flex: 0 1 auto; min-height: 0; overflow: hidden; }
 
         /* ---------- Desktop: side rail instead of a bottom bar ---------- */
         @media (min-width: 900px) {
           /* Reads a touch small at 100% on a desktop screen; this matches
              setting the browser zoom to 110%. */
-          :root { --hd-nav: 0px; }
-          .hd-shell { display: flex; height: var(--hd-vh); }
+          .hd-shell { flex-direction: row; }
           .hd-side {
             width: 232px; flex-shrink: 0; background: #1E2126;
             border-right: 1px solid #2A2D33; display: flex; flex-direction: column;
@@ -1576,8 +1557,7 @@ function App() {
             text-align: left; border-left: 3px solid transparent;
           }
           .hd-side .side-btn.active { background: #14161A; border-left-color: #C81E3A; }
-          .hd-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-          .hd-main.no-header { height: var(--hd-vh); }
+          .hd-body { min-width: 0; }
           /* One column when narrow, two once there is room. Capped at two on
              purpose: a 4-item cycle in three columns leaves a stranded card. */
           .wide-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
@@ -1590,7 +1570,7 @@ function App() {
           .food-screen {
             display: flex;
             flex-direction: column;
-            height: calc(var(--hd-vh) - 50px);
+            height: 100%;
           }
           .food-screen > .wide-grid { flex: 1 1 0; min-height: 0; }
           /* A long meal scrolls its food list rather than pushing the totals
@@ -1616,7 +1596,7 @@ function App() {
             display: grid;
             grid-template-columns: minmax(0, 1fr) 330px;
             gap: 18px;
-            height: calc(var(--hd-vh) - 50px);
+            height: 100%;
           }
           .split-layout > .wide-grid { min-height: 0; }
           .split-layout > .wide-grid > * { min-height: 0; }
@@ -1624,7 +1604,7 @@ function App() {
           .split-left { min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 14px; }
           /* Progress has a tab strip above the split, so the split takes the
              leftover height instead of assuming it owns the whole screen. */
-          .prog-screen { display: flex; flex-direction: column; height: calc(var(--hd-vh) - 50px); }
+          .prog-screen { display: flex; flex-direction: column; height: 100%; }
           .prog-screen > .split-layout { height: auto; flex: 1 1 auto; min-height: 0; }
           /* The chart takes whatever height the controls above it leave over. */
           .chart-fill { flex: 1 1 0; min-height: 180px; display: flex; flex-direction: column; overflow: hidden; }
@@ -1651,7 +1631,7 @@ function App() {
         ::-webkit-scrollbar-corner { background: transparent; }
       `}</style>
 
-      <div className={isWide ? "hd-shell" : undefined}>
+      <div className="hd-shell">
       {isWide && ready && settings.lang && settings.onboarded && (
         <aside className="hd-side">
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 12px 22px" }}>
@@ -1666,7 +1646,7 @@ function App() {
           <SideBtn icon={<Settings2 size={px(18)} />} label={t("settings")} active={showSettings} onClick={() => setShowSettings((v) => !v)} />
         </aside>
       )}
-      <div className={isWide ? "hd-body" : undefined}>
+      <div className="hd-body">
       <header style={{ padding: "14px 16px 12px", borderBottom: "1px solid #2A2D33", display: railShown ? "none" : "block" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 6, height: 26, background: "#C81E3A" }} />
@@ -1680,7 +1660,7 @@ function App() {
         </div>
       </header>
 
-      <main className={"hd-main" + (railShown ? " no-header" : "")} style={{ padding: isWide ? "22px 28px 28px" : "12px 12px 14px", maxWidth: isWide ? 2000 : 560, margin: "0 auto", width: "100%" }}>
+      <main className={"hd-main" + (railShown ? " no-header" : "")} style={{ padding: isWide ? "22px 28px 28px" : "10px 12px 10px", maxWidth: isWide ? 2000 : 560, margin: "0 auto", width: "100%" }}>
         {!ready ? (
           <div style={{ textAlign: "center", padding: 60, color: "#8A8D93" }} className="mono">{t("loading")}</div>
         ) : !settings.lang ? (
@@ -1708,7 +1688,7 @@ function App() {
       </div>
 
       {!isWide && ready && settings.lang && settings.onboarded && !showSettings && (
-        <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#1E2126", borderTop: "1px solid #2A2D33", display: "flex", padding: "8px 0 max(8px, env(safe-area-inset-bottom))" }}>
+        <nav className="hd-nav" style={{ background: "#1E2126", borderTop: "1px solid #2A2D33", display: "flex", padding: "8px 0 max(8px, env(safe-area-inset-bottom))" }}>
           <NavBtn icon={<Utensils size={px(19)} />} label={t("food")} active={tab === "food"} onClick={() => setTab("food")} />
           <NavBtn icon={<Flame size={px(19)} />} label={t("train")} active={tab === "train"} onClick={() => setTab("train")} />
           <NavBtn icon={<TrendingUp size={px(19)} />} label={t("progress")} active={tab === "progress"} onClick={() => setTab("progress")} />
@@ -2214,7 +2194,7 @@ function Food({ mealPlans, setMealPlans }) {
           fold on purpose. Desktop: everything shares one screen, no scrolling. */}
       {/* Ends short of the nav bar so meal D doesn't sit flush against it. */}
       <div ref={isWide ? undefined : fitOuter} className={isWide ? "wide-grid" : "fill-screen"}
-        style={isWide ? undefined : { height: "calc(100dvh - var(--hd-header) - var(--hd-nav) - var(--hd-mainpad) - 28px)" }}>
+        style={isWide ? undefined : { height: "calc(100% - 22px)" }}>
       <div ref={isWide ? undefined : fitInner}
         style={isWide ? undefined : { zoom: fitScale, height: `calc(100% / ${fitScale})`, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
       {isWide ? MEAL_KEYS.map((key) => (
