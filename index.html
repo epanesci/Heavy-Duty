@@ -247,7 +247,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0822-1657";
+const BUILD = "0822-1712";
 
 let SCALE = 1;
 function px(n) {
@@ -1530,7 +1530,9 @@ function App() {
         /* Three bands: header, content, nav. The middle one is whatever the
            other two leave over — measured by the browser, not by constants,
            so changing the type size can never make them overlap. */
-        .app-root { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+        #root { height: 100%; }
+        .app-root { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
         .hd-shell { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
         .hd-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
         .hd-main { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
