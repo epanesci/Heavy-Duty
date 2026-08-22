@@ -215,29 +215,21 @@ function useFitScale(deps) {
       inner.current.style.height = "auto";
       const natural = inner.current.scrollHeight;
       if (!avail || !natural) return;
-      const next = Math.min(1.6, Math.max(1, (avail / natural) * 0.98));
+      const next = Math.min(1.6, Math.max(1, (avail / natural) * 0.995));
       setScale(Number(next.toFixed(3)));
     };
 
     measure();
     // The first pass runs before the web fonts arrive, so the text is measured
-    // in a fallback face and comes out short — hence the overlap on a cold open.
-    const raf = requestAnimationFrame(measure);
+    // in a fallback face and the cards end up overlapping the nav bar. One
+    // re-measure once the real fonts are in fixes it; nothing else re-runs,
+    // since repeated passes fight the zoom that was just applied.
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
-    const timer = setTimeout(measure, 400);
 
     window.addEventListener("resize", measure);
-    let ro;
-    if (window.ResizeObserver) {
-      ro = new ResizeObserver(() => requestAnimationFrame(measure));
-      if (inner.current) ro.observe(inner.current);
-    }
     return () => {
       alive = false;
-      cancelAnimationFrame(raf);
-      clearTimeout(timer);
       window.removeEventListener("resize", measure);
-      if (ro) ro.disconnect();
     };
   }, [deps]);
 
@@ -258,7 +250,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0822-1650";
+const BUILD = "0822-1653";
 
 let SCALE = 1;
 function px(n) {
