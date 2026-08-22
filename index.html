@@ -247,7 +247,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0822-1717";
+const BUILD = "0822-1733";
 
 let SCALE = 1;
 function px(n) {
@@ -1508,7 +1508,7 @@ function App() {
   };
 
   return (
-    <div style={{ background: "#14161A", minHeight: "100vh", color: "#E8E6E1", fontFamily: "'Arial Narrow', Arial, sans-serif" }}>
+    <div className="app-root" style={{ background: "#14161A", color: "#E8E6E1", fontFamily: "'Arial Narrow', Arial, sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
         .disp { font-family: 'Oswald', Arial, sans-serif; }
@@ -1665,7 +1665,7 @@ function App() {
         </div>
       </header>
 
-      <main className={"hd-main" + (railShown ? " no-header" : "")} style={{ padding: isWide ? "22px 28px 28px" : "10px 12px 10px", maxWidth: isWide ? 2000 : 560, margin: "0 auto", width: "100%" }}>
+      <main className="hd-main" style={{ padding: isWide ? "22px 28px 28px" : "10px 12px 10px", maxWidth: isWide ? 2000 : 560, margin: "0 auto", width: "100%" }}>
         {!ready ? (
           <div style={{ textAlign: "center", padding: 60, color: "#8A8D93" }} className="mono">{t("loading")}</div>
         ) : !settings.lang ? (
