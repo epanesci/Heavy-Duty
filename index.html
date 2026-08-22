@@ -198,6 +198,33 @@ const STRINGS = {
   },
 };
 
+// Grows the type until the cards fill the screen. Content varies (a day may
+// hold two exercises or five), so the factor is measured rather than guessed.
+function useFitScale(deps) {
+  const outer = React.useRef(null);
+  const inner = React.useRef(null);
+  const [scale, setScale] = useState(1);
+
+  React.useLayoutEffect(() => {
+    const measure = () => {
+      if (!outer.current || !inner.current) return;
+      const avail = outer.current.clientHeight;
+      // Measure at 1:1, otherwise the previous factor skews the reading.
+      inner.current.style.zoom = 1;
+      inner.current.style.height = "auto";
+      const natural = inner.current.scrollHeight;
+      if (!avail || !natural) return;
+      const next = Math.min(1.6, Math.max(1, (avail / natural) * 0.995));
+      setScale(Number(next.toFixed(3)));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [deps]);
+
+  return [outer, inner, scale];
+}
+
 function useIsWide() {
   const [wide, setWide] = useState(false);
   useEffect(() => {
@@ -212,7 +239,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0822-1639";
+const BUILD = "0822-1645";
 
 let SCALE = 1;
 function px(n) {
@@ -1709,6 +1736,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
   const [screen, setScreen] = useState({ mode: "list" });
   const [expandedHistory, setExpandedHistory] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [fitOuter, fitInner, fitScale] = useFitScale(JSON.stringify(routineConfig) + historyOpen);
   // With a column of its own there is no reason to keep the history folded.
   useEffect(() => { if (isWide) setHistoryOpen(true); }, [isWide]);
   const suggestedRoutine = cycle[(settings.lastRoutineIndex + 1) % cycle.length];
@@ -1766,7 +1794,9 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
           />
         </div>
       ) : (
-      <div className={isWide ? "wide-grid" : (historyOpen ? undefined : "fill-screen")}>
+      <div ref={isWide ? undefined : fitOuter} className={isWide ? "wide-grid" : (historyOpen ? undefined : "fill-screen")}>
+      <div ref={isWide ? undefined : fitInner}
+        style={isWide ? undefined : { zoom: fitScale, height: `calc(100% / ${fitScale})`, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
       {/* Desktop: every day is laid out in full, editable in place, so nothing
           needs to be opened just to be read. Mobile keeps the compact summary. */}
       {isWide ? cycle.map((key) => (
@@ -1814,6 +1844,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
         </button>
       ))}
 
+      </div>
       </div>
       )}
 
@@ -2149,6 +2180,7 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
 function Food({ mealPlans, setMealPlans }) {
   const [openPlan, setOpenPlan] = useState(null);
   const isWide = useIsWide();
+  const [fitOuter, fitInner, fitScale] = useFitScale(JSON.stringify(mealPlans));
 
   if (openPlan) {
     return <MealPlanDetail planKey={openPlan} plan={mealPlans[openPlan] || { label: "", items: [] }} allPlans={mealPlans} setMealPlans={setMealPlans} onBack={() => setOpenPlan(null)} />;
@@ -2170,8 +2202,10 @@ function Food({ mealPlans, setMealPlans }) {
       {/* Mobile: the four meals fill one screen and the total sits below the
           fold on purpose. Desktop: everything shares one screen, no scrolling. */}
       {/* Ends short of the nav bar so meal D doesn't sit flush against it. */}
-      <div className={isWide ? "wide-grid" : "fill-screen"}
+      <div ref={isWide ? undefined : fitOuter} className={isWide ? "wide-grid" : "fill-screen"}
         style={isWide ? undefined : { height: "calc(100dvh - var(--hd-header) - var(--hd-nav) - var(--hd-mainpad) - 28px)" }}>
+      <div ref={isWide ? undefined : fitInner}
+        style={isWide ? undefined : { zoom: fitScale, height: `calc(100% / ${fitScale})`, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
       {isWide ? MEAL_KEYS.map((key) => (
         <div key={key} style={{ ...card, padding: "10px 12px" }}>
           <MealPlanDetail
@@ -2221,6 +2255,7 @@ function Food({ mealPlans, setMealPlans }) {
           </button>
         );
       })}
+      </div>
       </div>
 
       <div className={isWide ? "food-totals" : undefined} style={{ marginTop: isWide ? 12 : 40 }}>
