@@ -268,7 +268,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0822-1940";
+const BUILD = "0822-1943";
 
 let SCALE = 1;
 function px(n) {
@@ -1799,6 +1799,11 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
   const loggingKey = isWide && screen.mode === "log" ? screen.key : null;
   return (
     <div className={isWide ? "split-layout" : undefined}>
+      {!isWide && (
+        <div className="mono" style={{ position: "fixed", top: 2, right: 4, zIndex: 99, fontSize: 9, color: "#C81E3A" }}>
+          x{fitScale} · {(window.__fit && window.__fit.avail) || "?"}/{(window.__fit && window.__fit.natural) || "?"}
+        </div>
+      )}
       {/* Days on the left; on a wide screen the history gets its own column
           instead of sitting far below the fold. */}
       {loggingKey ? (
@@ -1811,11 +1816,6 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
           />
         </div>
       ) : (
-      {!isWide && (
-        <div className="mono" style={{ position: "fixed", top: 2, right: 4, zIndex: 99, fontSize: 9, color: "#C81E3A" }}>
-          x{fitScale} · {(window.__fit && window.__fit.avail) || "?"}/{(window.__fit && window.__fit.natural) || "?"}
-        </div>
-      )}
       <div ref={isWide ? undefined : fitOuter} className={isWide ? "wide-grid" : (historyOpen ? undefined : "fill-screen")}>
       <div ref={isWide ? undefined : fitInner}
         style={isWide
