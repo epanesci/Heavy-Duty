@@ -96,7 +96,7 @@ const STRINGS = {
     tagline: "ONE SET. TO FAILURE. NO EXCUSES.",
     train: "Train", food: "Food", progress: "Progress", books: "Books",
     days: "Days", day: "Day", suggested: "SUGGESTED", history: "History",
-    noSessions: "No sessions logged yet.", target: "Target", previousRecord: "Previous record",
+    noSessions: "No sessions logged yet.", target: "Target", previousRecord: "Record",
     logWorkout: "LOG WORKOUT", finishSession: "FINISH SESSION", editDay: "Edit day",
     save: "SAVE", cancel: "Cancel", weight: "Weight", reps: "Reps", seconds: "Seconds",
     negatives: "Negatives", note: "Note (optional)", exercise: "Exercise", protocol: "Protocol",
@@ -148,7 +148,7 @@ const STRINGS = {
     tagline: "UNA SERIE. AL FALLO. SIN EXCUSAS.",
     train: "Entrenar", food: "Comida", progress: "Progreso", books: "Libros",
     days: "Días", day: "Día", suggested: "SUGERIDO", history: "Historial",
-    noSessions: "Todavía no registraste sesiones.", target: "Objetivo", previousRecord: "Récord anterior",
+    noSessions: "Todavía no registraste sesiones.", target: "Objetivo", previousRecord: "Récord",
     logWorkout: "REGISTRAR SESIÓN", finishSession: "TERMINAR SESIÓN", editDay: "Editar día",
     save: "GUARDAR", cancel: "Cancelar", weight: "Peso", reps: "Reps", seconds: "Segundos",
     negatives: "Negativas", note: "Nota (opcional)", exercise: "Ejercicio", protocol: "Protocolo",
@@ -1285,9 +1285,15 @@ function PrevRecordLine({ workouts, routineKey, slotId, oneLine }) {
   else if (e.protocol === "negativas") rest = <>{e.reps} rep + {e.negatives || 0} neg</>;
   else if (e.protocol === "rest_pause") rest = <>{(e.repsBreakdown || []).filter(Boolean).reduce((a, v) => a + Number(v), 0) || e.reps} rep ({(e.repsBreakdown || []).join("+")})</>;
   else rest = <>{e.reps} reps</>;
+  // Same rule as the targets: positives only, never the rest-pause extras.
+  const positiveReps = e.protocol === "rest_pause" && e.repsBreakdown
+    ? Number(e.repsBreakdown[0]) || 0
+    : Number(e.reps) || 0;
+  const oneRM = e.timeBased ? null : calcOneRM(e.weight, positiveReps);
   return (
     <span className="mono" style={{ fontSize: oneLine ? 10 : 11, color: "#8A8D93", marginTop: oneLine ? 0 : 4, display: oneLine ? "inline" : "block", whiteSpace: oneLine ? "nowrap" : undefined }}>
-      {oneLine ? "▲ " : `${t("previousRecord")}: `}<span>{e.weight}{unit} {rest}</span> ({fmtDate(date)})
+      {oneLine ? "▲ " : `${t("previousRecord")}: `}<span>{e.weight}{unit} {rest}</span>
+      {oneRM ? <> (<b>{oneRM}{unit}</b>)</> : ""} ({fmtDate(date)})
     </span>
   );
 }
@@ -2088,7 +2094,7 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
                 {!inline && <div style={{ marginTop: 8 }} />}
 
                 <div style={{ display: inline ? "flex" : "block", gap: 6, width: inline ? 330 : undefined, flexShrink: 0 }}>
-                <input type="number" placeholder={`${t("weight")} (${slot.weightUnit || "kg"})`} value={entries[i].weight} onChange={(e) => update(i, "weight", e.target.value)} style={{ ...input, marginBottom: inline ? 0 : 6, minWidth: 0, width: inline ? 110 : undefined, padding: inline ? "7px 8px" : undefined, fontSize: lp(14) }} />
+                <input type="number" placeholder={slot.weightUnit || "kg"} value={entries[i].weight} onChange={(e) => update(i, "weight", e.target.value)} style={{ ...input, marginBottom: inline ? 0 : 6, minWidth: 0, width: inline ? 110 : undefined, padding: inline ? "7px 8px" : undefined, fontSize: lp(14) }} />
 
                 {slot.timeBased ? (
                   <input type="number" placeholder={t("phSeconds")} value={entries[i].seconds} onChange={(e) => update(i, "seconds", e.target.value)} style={{ ...input, flex: inline ? 1 : undefined, minWidth: 0, fontSize: lp(14) }} />
