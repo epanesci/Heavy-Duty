@@ -1416,7 +1416,7 @@ function App() {
   const isWide = useIsWide();
   const railShown = isWide && ready && settings.lang && settings.onboarded;
   CURRENT_LANG = settings.lang || "en";
-  SCALE = isWide ? 1.23 : 1;
+  SCALE = isWide ? 1.23 : 1.2;
 
   const pickLang = async (lang) => { await setSettings({ ...settings, lang }); };
 
@@ -1775,7 +1775,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
       )) : cycle.map((key) => (
         <button key={key} onClick={() => setScreen({ mode: "log", key })}
           className={isWide ? undefined : (historyOpen ? undefined : "grow")}
-          style={{ ...card, marginBottom: isWide ? 0 : 8, width: "100%", textAlign: "left", cursor: "pointer", display: "block" }}>
+          style={{ ...card, padding: isWide ? 14 : "9px 11px", marginBottom: isWide ? 0 : 8, width: "100%", textAlign: "left", cursor: "pointer", display: "block" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 7, minWidth: 0 }}>
@@ -1788,16 +1788,16 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
             </div>
             <ChevronRight size={px(18)} color="#8A8D93" style={{ flexShrink: 0 }} />
           </div>
-          <div style={{ marginTop: 8 }}>
+          <div style={{ marginTop: 5 }}>
             {getGroups(key, level).map((groupIds, gi) => (
-              <div key={gi} style={{ marginTop: gi > 0 ? 6 : 0, paddingLeft: 8,
+              <div key={gi} style={{ marginTop: gi > 0 ? 4 : 0, paddingLeft: 7,
                                      // Transparent border on non-supersets keeps every row on the
                                      // same left edge, so the weight column never shifts.
                                      borderLeft: "2px solid " + (groupIds.length > 1 ? "#C81E3A" : "transparent") }}>
                 {groupIds.map((slotId) => {
                   const slot = routineConfig[key].find((s) => s.slotId === slotId);
                   return (
-                    <div key={slotId} style={{ display: "grid", gridTemplateColumns: `${px(104)}px 1fr`, gap: 10, marginTop: 2 }}>
+                    <div key={slotId} style={{ display: "grid", gridTemplateColumns: `${px(104)}px 1fr`, gap: 10, marginTop: 1 }}>
                       <span className="mono" style={{ fontSize: px(11), color: "#8A8D93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortName(slot.exercise)}</span>
                       <span className="mono" style={{ fontSize: px(11), color: "#8A8D93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><MetaRow slot={slot} /></span>
                     </div>
@@ -2745,7 +2745,7 @@ function SectionLabel({ children }) {
 }
 
 const card = { background: "#1E2126", border: "1px solid #2A2D33", padding: 14 };
-const input = { width: "100%", background: "#14161A", border: "1px solid #3A3F47", color: "#E8E6E1", padding: "10px 12px", fontSize: px(14) };
+const input = { width: "100%", background: "#14161A", border: "1px solid #3A3F47", color: "#E8E6E1", padding: "6px 10px", fontSize: px(14) };
 const btnPrimary = { background: "#C81E3A", color: "#fff", border: "none", padding: "12px 20px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "'Oswald', sans-serif", fontWeight: 600, letterSpacing: 0.5, cursor: "pointer" };
 const btnGhost = { background: "none", color: "#8A8D93", border: "1px solid #3A3F47", padding: "12px 20px", fontFamily: "'Oswald', sans-serif", fontWeight: 600, letterSpacing: 0.5, cursor: "pointer" };
 
