@@ -202,6 +202,9 @@ const STRINGS = {
 // hold two exercises or five), so the factor is measured rather than guessed.
 // The content band has a height of its own, so this only asks: how much bigger
 // (or smaller) can the type be for the cards to fill it exactly?
+// Grows the type until the cards fill the content band. A single ratio isn't
+// enough: text rewraps at the new size, so the factor is refined against what
+// actually rendered until it settles.
 function useFitScale(deps) {
   const outer = React.useRef(null);
   const inner = React.useRef(null);
@@ -209,15 +212,33 @@ function useFitScale(deps) {
 
   React.useLayoutEffect(() => {
     let alive = true;
+
     const measure = () => {
       if (!alive || !outer.current || !inner.current) return;
+      const el = inner.current;
       const avail = outer.current.clientHeight;
-      // Read at 1:1 so the factor already applied doesn't skew the measurement.
-      inner.current.style.zoom = 1;
-      inner.current.style.height = "auto";
-      const natural = inner.current.scrollHeight;
-      if (!avail || !natural) return;
-      setScale(Number(Math.min(1.7, Math.max(0.8, avail / natural)).toFixed(3)));
+      if (!avail) return;
+
+      el.style.height = "auto";
+      el.style.zoom = 1;
+      const natural = el.scrollHeight;
+      if (!natural) return;
+
+      let s = avail / natural;
+      for (let pass = 0; pass < 4; pass++) {
+        el.style.zoom = s;
+        const rendered = el.getBoundingClientRect().height;
+        if (!rendered) break;
+        const off = avail / rendered;
+        if (Math.abs(off - 1) < 0.005) break;
+        s *= off;
+      }
+      s = Math.min(2.2, Math.max(0.8, s));
+      window.__fit = { avail, natural, scale: Number(s.toFixed(3)) };
+
+      el.style.zoom = "";
+      el.style.height = "";
+      setScale(Number(s.toFixed(3)));
     };
 
     measure();
@@ -247,7 +268,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0822-1737";
+const BUILD = "0822-1940";
 
 let SCALE = 1;
 function px(n) {
@@ -1790,6 +1811,11 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
           />
         </div>
       ) : (
+      {!isWide && (
+        <div className="mono" style={{ position: "fixed", top: 2, right: 4, zIndex: 99, fontSize: 9, color: "#C81E3A" }}>
+          x{fitScale} · {(window.__fit && window.__fit.avail) || "?"}/{(window.__fit && window.__fit.natural) || "?"}
+        </div>
+      )}
       <div ref={isWide ? undefined : fitOuter} className={isWide ? "wide-grid" : (historyOpen ? undefined : "fill-screen")}>
       <div ref={isWide ? undefined : fitInner}
         style={isWide
