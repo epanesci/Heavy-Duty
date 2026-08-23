@@ -247,7 +247,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0823-0802";
+const BUILD = "0823-0825";
 
 let SCALE = 1;
 function px(n) {
@@ -1607,14 +1607,18 @@ function App() {
           .food-screen > .wide-grid { flex: 1 1 0; min-height: 0; }
           /* A long meal scrolls its food list rather than pushing the totals
              off screen: the list scrolls, the totals stay at the foot. */
-          .fit-card { overflow: hidden; min-height: 0; display: flex; flex-direction: column; }
-          /* Rows share the height instead of hugging their content: on a tablet
-             the cards are short enough that the grid would leave the bottom of
-             the screen empty. */
+          .fit-card { min-height: 0; display: flex; flex-direction: column; }
+          /* Rows size to their content first, then share out whatever height is
+             left: a meal with six foods gets more room than one with three, and
+             the screen still ends up full. */
           .food-screen > .wide-grid,
-          .split-layout > .wide-grid { grid-auto-rows: minmax(0, 1fr); align-content: stretch; }
+          .split-layout > .wide-grid { grid-auto-rows: auto; align-content: stretch; overflow-y: auto; }
           .inline-card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-          .inline-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+          /* Not scrollable here on purpose: a scrollable box reports that it can
+             shrink to nothing, so the grid would size every row the same and the
+             longest meal would scroll inside itself. Letting it report its real
+             height is what makes rows follow their content. */
+          .inline-scroll { flex: 0 1 auto; min-height: 0; }
           /* The log form is meant to fit the days column outright — every field
              visible at once, no scrolling while you are mid-session. */
           .log-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: flex-start; gap: 0; overflow: hidden; }
