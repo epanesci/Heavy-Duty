@@ -247,7 +247,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0823-0735";
+const BUILD = "0823-0742";
 
 let SCALE = 1;
 function px(n) {
@@ -1890,7 +1890,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
                         const oneRM = e.timeBased ? null : calcOneRM(e.weight, positiveReps);
                         return (
                           <div key={i} style={{ borderTop: "1px solid #2A2D33", padding: "8px 0" }}>
-                            <div className="disp" style={{ fontSize: px(13) }}>{e.exercise}</div>
+                            <div className="disp" style={{ fontSize: px(13) }}>{shortName(e.exercise)}</div>
                             <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", marginTop: 2 }}>
                               {e.weight ? `${e.weight}${e.weightUnit || "kg"} · ` : ""}
                               {e.timeBased
@@ -2046,7 +2046,7 @@ function RoutineView({ routineKey, config, workouts, level, inline, suggested, r
                 <div key={slotId} onClick={readOnly ? undefined : () => setOpenSlot(slotId)}
                   style={{ paddingTop: si > 0 ? 7 : 0, marginTop: si > 0 ? 7 : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none", cursor: readOnly ? "inherit" : "pointer" }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
-                    <span className="disp" style={{ fontSize: px(15), flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "42%" }}>{slot.exercise}</span>
+                    <span className="disp" style={{ fontSize: px(15), flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "42%" }}>{shortName(slot.exercise)}</span>
                     <span className="mono" style={{ fontSize: px(12), color: "#E8E6E1", marginLeft: "auto", whiteSpace: "nowrap" }}><MetaRow slot={slot} /></span>
                   </div>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0, marginTop: 1 }}>
@@ -2060,7 +2060,7 @@ function RoutineView({ routineKey, config, workouts, level, inline, suggested, r
                 </div>
               ) : (
               <div key={slotId} style={{ paddingTop: si > 0 ? 10 : 0, marginTop: si > 0 ? 10 : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none" }}>
-                <div className="disp" style={{ fontSize: px(15) }}>{slot.exercise}</div>
+                <div className="disp" style={{ fontSize: px(15) }}>{shortName(slot.exercise)}</div>
                 <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", marginTop: 2 }}>{tx(slotDef?.name)}{slot.note ? ` · ${slot.note}` : ""}</div>
                 <div style={{ marginTop: 8 }}>
                   <span className="mono" style={{ fontSize: px(11), color: "#C81E3A" }}>{slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)}</span>
@@ -2134,7 +2134,7 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
                 display: inline ? "flex" : "block", alignItems: inline ? "center" : undefined, gap: inline ? 14 : 0,
               }}>
                 <div style={{ flex: inline ? 1 : undefined, minWidth: 0 }}>
-                  <div className="disp" style={{ fontSize: lp(14), marginBottom: 2 }}>{slot.exercise}</div>
+                  <div className="disp" style={{ fontSize: lp(14), marginBottom: 2 }}>{shortName(slot.exercise)}</div>
                   <div className="mono" style={{ fontSize: lp(11), color: "#C81E3A", marginBottom: 4 }}>
                     {slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)} · {t("target")} <MetaRow slot={slot} />{slot.note ? ` · ${slot.note}` : ""}
                   </div>
