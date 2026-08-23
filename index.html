@@ -247,7 +247,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0823-0742";
+const BUILD = "0823-0749";
 
 let SCALE = 1;
 function px(n) {
@@ -1578,6 +1578,13 @@ function App() {
           .wide-grid > .grow { flex: none; overflow: visible; }
           .fill-screen.wide-grid { height: auto; min-height: 0; }
           .side-col { margin-top: 18px; }
+          /* These classes are applied from 900px up, so they must be defined
+             from 900px up: between 900 and 1150 the chart was asking for 100%
+             of a height nobody had set, which is zero, and it drew nothing. */
+          .chart-fill { flex: 1 1 0; min-height: 180px; display: flex; flex-direction: column; overflow: hidden; }
+          .chart-fill > .chart-area { flex: 1 1 auto; min-height: 170px; }
+          .split-left { display: flex; flex-direction: column; min-height: 0; }
+          .prog-screen { display: flex; flex-direction: column; height: 100%; }
           /* Food fits one screen: the meals take whatever height is left and
              the day's totals stay pinned at the bottom. main's vertical
              padding is 22px + 28px. */
@@ -1626,8 +1633,6 @@ function App() {
           .prog-screen { display: flex; flex-direction: column; height: 100%; }
           .prog-screen > .split-layout { height: auto; flex: 1 1 auto; min-height: 0; }
           /* The chart takes whatever height the controls above it leave over. */
-          .chart-fill { flex: 1 1 0; min-height: 180px; display: flex; flex-direction: column; overflow: hidden; }
-          .chart-fill > .chart-area { flex: 1 1 auto; min-height: 0; }
           .split-left > *:not(.chart-fill) { flex-shrink: 0; }
         }
         @media (min-width: 1360px) {
