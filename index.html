@@ -247,7 +247,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0823-0756";
+const BUILD = "0823-0802";
 
 let SCALE = 1;
 function px(n) {
@@ -1594,6 +1594,8 @@ function App() {
           .prog-screen > .split-layout { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 14px; }
           .prog-screen > .split-layout > .split-left { flex: 1 1 auto; }
           .prog-screen > .split-layout > .side-col { flex: 0 0 auto; max-height: 38%; overflow-y: auto; margin-top: 0; }
+        }
+        @media (min-width: 900px) {
           /* Food fits one screen: the meals take whatever height is left and
              the day's totals stay pinned at the bottom. main's vertical
              padding is 22px + 28px. */
@@ -1605,8 +1607,7 @@ function App() {
           .food-screen > .wide-grid { flex: 1 1 0; min-height: 0; }
           /* A long meal scrolls its food list rather than pushing the totals
              off screen: the list scrolls, the totals stay at the foot. */
-          .food-screen > .wide-grid > *,
-          .split-layout > .wide-grid > * { overflow: hidden; min-height: 0; display: flex; flex-direction: column; }
+          .fit-card { overflow: hidden; min-height: 0; display: flex; flex-direction: column; }
           /* Rows share the height instead of hugging their content: on a tablet
              the cards are short enough that the grid would leave the bottom of
              the screen empty. */
@@ -1828,7 +1829,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
           needs to be opened just to be read. Mobile keeps the compact summary. */}
       {isWide ? cycle.map((key) => (
         <div key={key} onClick={() => setScreen({ mode: "log", key })}
-          style={{ ...card, padding: "12px 14px", cursor: "pointer" }}>
+          className="fit-card" style={{ ...card, padding: "12px 14px", cursor: "pointer" }}>
           <RoutineView
             routineKey={key} config={routineConfig[key]} workouts={workouts} level={level} inline readOnly
             suggested={key === suggestedRoutine}
@@ -2237,7 +2238,7 @@ function Food({ mealPlans, setMealPlans }) {
           ? { display: "contents" }
           : { zoom: fitScale, height: `calc(100% / ${fitScale})`, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
       {isWide ? MEAL_KEYS.map((key) => (
-        <div key={key} style={{ ...card, padding: "10px 12px" }}>
+        <div key={key} className="fit-card" style={{ ...card, padding: "10px 12px" }}>
           <MealPlanDetail
             planKey={key} plan={mealPlans[key] || { label: "", items: [] }}
             allPlans={mealPlans} setMealPlans={setMealPlans} inline
