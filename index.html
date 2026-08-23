@@ -247,7 +247,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0823-0749";
+const BUILD = "0823-0752";
 
 let SCALE = 1;
 function px(n) {
@@ -2630,7 +2630,7 @@ function BodyComposition({ bodystats, setBodystats }) {
               <YAxis stroke="#8A8D93" fontSize={10} domain={["dataMin - 2", "dataMax + 3"]} />
               <Tooltip contentStyle={{ background: "#1E2126", border: "1px solid #2A2D33", fontSize: px(12) }} labelStyle={{ color: "#E8E6E1" }} />
               <Line type="monotone" dataKey="weight" stroke="#C81E3A" strokeWidth={2} dot={{ fill: "#C81E3A", r: 3 }}>
-                {LabelList && (
+                {LabelList && isWide && (
                   <LabelList dataKey="weight" position="top" offset={8}
                     style={{ fill: "#E8E6E1", fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }} />
                 )}
@@ -2726,7 +2726,7 @@ function Performance({ workouts }) {
               <YAxis stroke="#8A8D93" fontSize={10} domain={["dataMin - 5", "dataMax + 8"]} />
               <Tooltip contentStyle={{ background: "#1E2126", border: "1px solid #2A2D33", fontSize: px(12) }} labelStyle={{ color: "#E8E6E1" }} formatter={(v, n) => n === "oneRM" ? [`${v} ${unit}`, "Theoretical 1RM"] : n === "seconds" ? [`${v}s`, "Seconds"] : [v, n]} />
               <Line type="monotone" dataKey={isTimeBased ? "seconds" : "oneRM"} stroke="#C81E3A" strokeWidth={2} dot={{ fill: "#C81E3A", r: 3 }}>
-                {LabelList && (
+                {LabelList && isWide && (
                   <LabelList dataKey={isTimeBased ? "seconds" : "oneRM"} position="top" offset={8}
                     style={{ fill: "#E8E6E1", fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }} />
                 )}
