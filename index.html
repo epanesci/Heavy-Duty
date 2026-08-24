@@ -141,7 +141,7 @@ const STRINGS = {
     orManual: "Not found — type the values below", pickedFrom: "auto-calculated from database",
     historyFor: "History for", leanMassKg: "Lean mass (kg)", saveChanges: "SAVE CHANGES", add: "ADD",
     fatShort: "Fat", leanShort: "Lean mass",
-    cycle: "Cycle", nothingLogged: "Every field must be filled in before saving the session.",
+    cycle: "Cycle", supersetWithPrev: "Superset with the one above", nothingLogged: "Every field must be filled in before saving the session.",
     logSession: "LOG SESSION", positive: "positive", slowNegatives: "slow negatives", hold: "hold", repsWord: "reps",
     saveDay: "SAVE DAY", saveAsTarget: "SAVE AS TARGET", newExercise: "New exercise", removeExercise: "Remove this exercise from the day?",
   },
@@ -194,7 +194,7 @@ const STRINGS = {
     orManual: "No encontrado — cargá los valores abajo", pickedFrom: "calculado desde la base",
     historyFor: "Historial de", leanMassKg: "M. Magra (kg)", saveChanges: "GUARDAR CAMBIOS", add: "AGREGAR",
     fatShort: "Grasa", leanShort: "M. Magra",
-    cycle: "Ciclo", nothingLogged: "Completá todas las casillas antes de registrar la sesión.",
+    cycle: "Ciclo", supersetWithPrev: "Superserie con el anterior", nothingLogged: "Completá todas las casillas antes de registrar la sesión.",
     logSession: "REGISTRAR SESIÓN", positive: "positivas", slowNegatives: "negativas lentas", hold: "isométrico", repsWord: "reps",
     saveDay: "GUARDAR DÍA", saveAsTarget: "GUARDAR OBJETIVO", newExercise: "Ejercicio nuevo", removeExercise: "¿Quitar este ejercicio del día?",
   },
@@ -261,7 +261,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0824-1347";
+const BUILD = "0824-1404";
 
 let SCALE = 1;
 function px(n) {
@@ -415,15 +415,22 @@ const PROTOCOLS = {
 
 function getGroups(routineKey, levelKey, config) {
   const r = getRoutines(levelKey)[routineKey];
-  const groups = (r.groups || r.slots.map((s) => [s.id])).map((g) => g.slice());
-  if (!config) return groups;
+  const defined = (r.groups || r.slots.map((s) => [s.id])).map((g) => g.slice());
+  if (!config) return defined;
 
-  // Keep only what the day still has, then append anything added by hand.
-  const known = new Set(config.map((s) => s.slotId));
-  const listed = new Set(groups.flat());
-  const kept = groups.map((g) => g.filter((id) => known.has(id))).filter((g) => g.length);
-  config.forEach((s) => { if (!listed.has(s.slotId)) kept.push([s.slotId]); });
-  return kept;
+  // An exercise is part of a superset when it is chained to the one above it.
+  // The flag lives on the slot so it can be toggled; where it hasn't been set,
+  // the routine's own grouping decides.
+  const chainedByDefault = new Set();
+  defined.forEach((g) => g.slice(1).forEach((id) => chainedByDefault.add(id)));
+
+  const groups = [];
+  config.forEach((s) => {
+    const chained = s.superset !== undefined ? s.superset : chainedByDefault.has(s.slotId);
+    if (chained && groups.length) groups[groups.length - 1].push(s.slotId);
+    else groups.push([s.slotId]);
+  });
+  return groups;
 }
 
 // A slot the user created has no entry in the routine definition; this fills in
@@ -2077,7 +2084,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
 
 // One exercise, editable in place: pick the movement, the protocol and the
 // numbers that protocol actually needs.
-function SlotRowEditor({ slot, slotDef, onChange, onDelete, onDone }) {
+function SlotRowEditor({ slot, slotDef, isFirst, onChange, onDelete, onDone }) {
   const [draft, setDraft] = useState(slot);
   const set = (patch) => {
     const next = { ...draft, ...patch };
@@ -2155,6 +2162,19 @@ function SlotRowEditor({ slot, slotDef, onChange, onDelete, onDone }) {
           onChange={(e) => set({ note: e.target.value })}
           style={{ ...input, padding: "5px 8px", fontSize: px(12), flex: 1, minWidth: 0 }} />
       </div>
+
+      {/* The first exercise of a day has nothing above it to pair with. */}
+      {!isFirst && (
+        <button onClick={() => set({ superset: !draft.superset })}
+          style={{ marginTop: 6, width: "100%", background: "none", cursor: "pointer",
+                   padding: "6px 8px", display: "flex", alignItems: "center", gap: 8,
+                   border: "1px solid " + (draft.superset ? "#C81E3A" : "#2A2D33"),
+                   color: draft.superset ? "#C81E3A" : "#8A8D93" }}>
+          <span style={{ width: 12, height: 12, flexShrink: 0, border: "1px solid currentColor",
+                         background: draft.superset ? "#C81E3A" : "transparent" }} />
+          <span className="mono" style={{ fontSize: px(11), letterSpacing: 0.5 }}>{t("supersetWithPrev")}</span>
+        </button>
+      )}
     </div>
   );
 }
@@ -2368,7 +2388,7 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
                   </div>
                   {openSlot === slot.slotId ? (
                     <SlotRowEditor
-                      slot={slot} slotDef={slotDef}
+                      slot={slot} slotDef={slotDef} isFirst={config[0] && config[0].slotId === slot.slotId}
                       onChange={(next) => onSaveSlot && onSaveSlot(next)}
                       onDone={() => setOpenSlot(null)}
                     />
