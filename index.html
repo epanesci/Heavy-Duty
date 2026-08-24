@@ -259,7 +259,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0824-1315";
+const BUILD = "0824-1323";
 
 let SCALE = 1;
 function px(n) {
@@ -2299,7 +2299,9 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     {/* An exercise added by hand has no name yet, so it is typed
                         here; the history then follows that name. */}
-                    {slotDef.custom ? (
+                    {/* The name field belongs to the moment of adding: once the
+                        exercise has one it behaves like every other row. */}
+                    {slotDef.custom && !slot.exercise ? (
                       <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
                         <input
                           value={slot.exercise || ""}
