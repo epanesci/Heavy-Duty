@@ -141,6 +141,7 @@ const STRINGS = {
     orManual: "Not found — type the values below", pickedFrom: "auto-calculated from database",
     historyFor: "History for", leanMassKg: "Lean mass (kg)", saveChanges: "SAVE CHANGES", add: "ADD",
     fatShort: "Fat", leanShort: "Lean mass",
+    cycle: "Cycle",
     logSession: "LOG SESSION", positive: "positive", slowNegatives: "slow negatives", hold: "hold", repsWord: "reps",
     saveDay: "SAVE DAY", saveAsTarget: "SAVE AS TARGET", newExercise: "New exercise", removeExercise: "Remove this exercise from the day?",
   },
@@ -193,6 +194,7 @@ const STRINGS = {
     orManual: "No encontrado — cargá los valores abajo", pickedFrom: "calculado desde la base",
     historyFor: "Historial de", leanMassKg: "M. Magra (kg)", saveChanges: "GUARDAR CAMBIOS", add: "AGREGAR",
     fatShort: "Grasa", leanShort: "M. Magra",
+    cycle: "Ciclo",
     logSession: "REGISTRAR SESIÓN", positive: "positivas", slowNegatives: "negativas lentas", hold: "isométrico", repsWord: "reps",
     saveDay: "GUARDAR DÍA", saveAsTarget: "GUARDAR OBJETIVO", newExercise: "Ejercicio nuevo", removeExercise: "¿Quitar este ejercicio del día?",
   },
@@ -259,7 +261,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0824-1323";
+const BUILD = "0824-1341";
 
 let SCALE = 1;
 function px(n) {
@@ -1377,31 +1379,43 @@ const fmtDateTime = (d) => new Date(d).toLocaleDateString(locale(), { day: "2-di
 // Matched by exercise, not by position in the day: swapping the exercise in a
 // slot starts that exercise from scratch instead of inheriting the old one's
 // numbers, which were never comparable.
-// The history is shown against the current routine: an entry belongs to the day
-// its exercise sits in today, not the day it happened to be logged under. The
-// stored sessions are never rewritten — dropped entries stay in the data and
-// come back if the exercise is put back in the routine.
-function projectHistory(workouts, routineConfig, cycle) {
-  const dayOf = {};
-  cycle.forEach((key) => {
-    (routineConfig[key] || []).forEach((slot) => {
-      if (slot.exercise) dayOf[slot.exercise] = key;
-    });
-  });
+// The history is organised by cycle, not by date. Each exercise keeps its own
+// run of sessions (its 1st, 2nd, ... nth), and the cycles line those runs up
+// from the most recent backwards: an exercise with fewer sessions simply runs
+// out earlier and shows a dash. The number of cycles is set by whichever
+// exercise has been done the most.
+function buildCycles(workouts, routineConfig, cycleKeys) {
+  const runs = new Map();
+  workouts.slice()
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .forEach((w) => (w.entries || []).forEach((e) => {
+      if (!e.exercise) return;
+      if (!runs.has(e.exercise)) runs.set(e.exercise, []);
+      runs.get(e.exercise).push(e);
+    }));
 
-  const out = [];
-  workouts.forEach((w) => {
-    const byDay = {};
-    (w.entries || []).forEach((e) => {
-      const day = dayOf[e.exercise];
-      if (!day) return; // no longer part of the routine
-      (byDay[day] = byDay[day] || []).push(e);
-    });
-    Object.keys(byDay).forEach((day) => {
-      out.push({ id: `${w.id}-${day}`, date: w.date, routine: day, entries: byDay[day] });
-    });
-  });
-  return out.sort((a, b) => new Date(b.date) - new Date(a.date));
+  const slotsOf = (key) => (routineConfig[key] || []).filter((s) => s.exercise);
+  let total = 0;
+  cycleKeys.forEach((key) => slotsOf(key).forEach((s) => {
+    total = Math.max(total, (runs.get(s.exercise) || []).length);
+  }));
+  if (!total) return [];
+
+  const cycles = [];
+  for (let n = total; n >= 1; n--) {
+    const days = cycleKeys.map((key) => ({
+      key,
+      rows: slotsOf(key).map((slot) => {
+        const run = runs.get(slot.exercise) || [];
+        // Aligned from the end: the newest session of every exercise sits in
+        // the newest cycle, so runs of different lengths stay in step.
+        const idx = run.length - (total - n) - 1;
+        return { slot, entry: idx >= 0 ? run[idx] : null, num: idx >= 0 ? idx + 1 : null };
+      }),
+    })).filter((d) => d.rows.length);
+    cycles.push({ n, days });
+  }
+  return cycles;
 }
 
 function getPrevRecord(workouts, exercise) {
@@ -1864,7 +1878,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
   const [expandedHistory, setExpandedHistory] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [fitOuter, fitInner, fitScale] = useFitScale(JSON.stringify(routineConfig) + historyOpen);
-  const shownHistory = useMemo(() => projectHistory(workouts, routineConfig, cycle), [workouts, routineConfig, cycle]);
+  const cycles = useMemo(() => buildCycles(workouts, routineConfig, cycle), [workouts, routineConfig, cycle]);
   // With a column of its own there is no reason to keep the history folded.
   useEffect(() => { if (isWide) setHistoryOpen(true); }, [isWide]);
   const suggestedRoutine = cycle[(settings.lastRoutineIndex + 1) % cycle.length];
@@ -2011,40 +2025,44 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
         </button>
         {historyOpen && (
           <>
-            {shownHistory.length === 0 && <p className="mono" style={{ color: "#8A8D93", fontSize: px(12) }}>{t("noSessions")}</p>}
-            {shownHistory.map((w) => {
-              const isOpen = expandedHistory === w.id;
+            {cycles.length === 0 && <p className="mono" style={{ color: "#8A8D93", fontSize: px(12) }}>{t("noSessions")}</p>}
+            {cycles.map((cyc) => {
+              const isOpen = expandedHistory === cyc.n;
               return (
-                <div key={w.id} style={{ ...card, marginBottom: 8, padding: 0, overflow: "hidden" }}>
-                  <button onClick={() => setExpandedHistory(isOpen ? null : w.id)} style={{ width: "100%", background: "none", border: "none", padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", color: "inherit" }}>
-                    <span className="disp" style={{ fontSize: px(14), textTransform: "uppercase" }}>{t("day")} {w.routine}</span>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span className="mono" style={{ fontSize: px(11), color: "#8A8D93" }}>{fmtDateTime(w.date)}</span>
-                      <ChevronDown size={px(14)} color="#8A8D93" style={{ transform: isOpen ? "rotate(180deg)" : "none" }} />
-                    </div>
+                <div key={cyc.n} style={{ ...card, marginBottom: 8, padding: 0, overflow: "hidden" }}>
+                  <button onClick={() => setExpandedHistory(isOpen ? null : cyc.n)} style={{ width: "100%", background: "none", border: "none", padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", color: "inherit" }}>
+                    <span className="disp" style={{ fontSize: px(14), textTransform: "uppercase" }}>{t("cycle")} {cyc.n}</span>
+                    <ChevronDown size={px(14)} color="#8A8D93" style={{ transform: isOpen ? "rotate(180deg)" : "none" }} />
                   </button>
                   {isOpen && (
                     <div style={{ padding: "0 14px 14px" }}>
-                      {w.entries.map((e, i) => {
-                        const positiveReps = e.protocol === "rest_pause" && e.repsBreakdown
-                          ? Number(e.repsBreakdown[0]) || 0
-                          : Number(e.reps) || 0;
-                        const oneRM = e.timeBased ? null : calcOneRM(e.weight, positiveReps);
-                        return (
-                          <div key={i} style={{ borderTop: "1px solid #2A2D33", padding: "8px 0" }}>
-                            <div className="disp" style={{ fontSize: px(13) }}>{shortName(e.exercise)}</div>
-                            <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", marginTop: 2 }}>
-                              {e.weight ? `${e.weight}${e.weightUnit || "kg"} · ` : ""}
-                              {e.timeBased
-                                ? `${e.seconds || 0}s (${t("hold")})`
-                                : e.protocol === "rest_pause" && e.repsBreakdown
-                                ? `${e.repsBreakdown.filter((r) => r).join(" + ")} ${t("repsWord")} (rest-pause)`
-                                : `${e.reps || 0} ${t("positive")}${e.negatives ? ` + ${e.negatives} ${t("slowNegatives")}` : ""}`}
-                              {oneRM ? <> (<b>{oneRM}{e.weightUnit || "kg"}</b>)</> : ""}
-                            </div>
+                      {cyc.days.map((d) => (
+                        <div key={d.key} style={{ borderTop: "1px solid #2A2D33", paddingTop: 8, marginTop: 8 }}>
+                          <div className="disp" style={{ fontSize: px(12), color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.6 }}>
+                            {t("day")} {d.key}
                           </div>
-                        );
-                      })}
+                          {d.rows.map(({ slot, entry, num }) => (
+                            <div key={slot.slotId} style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 3, minWidth: 0 }}>
+                              <span className="disp" style={{ fontSize: px(12), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                                {shortName(slot.exercise)}
+                              </span>
+                              {entry ? (
+                                <span className="mono" style={{ fontSize: px(11), color: "#8A8D93", whiteSpace: "nowrap" }}>
+                                  <span style={{ color: "#3A3F47" }}>#{num} </span>
+                                  {entry.weight ? `${entry.weight}${entry.weightUnit || "kg"} · ` : ""}
+                                  {entry.timeBased
+                                    ? `${entry.seconds || 0}s`
+                                    : entry.protocol === "rest_pause" && entry.repsBreakdown
+                                    ? `${entry.repsBreakdown.filter((r) => r).join("+")} ${t("repsWord")}`
+                                    : `${entry.reps || 0} ${t("repsWord")}${entry.negatives ? ` + ${entry.negatives} neg` : ""}`}
+                                </span>
+                              ) : (
+                                <span className="mono" style={{ fontSize: px(11), color: "#3A3F47" }}>—</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
