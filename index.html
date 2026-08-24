@@ -142,7 +142,7 @@ const STRINGS = {
     historyFor: "History for", leanMassKg: "Lean mass (kg)", saveChanges: "SAVE CHANGES", add: "ADD",
     fatShort: "Fat", leanShort: "Lean mass",
     logSession: "LOG SESSION", positive: "positive", slowNegatives: "slow negatives", hold: "hold", repsWord: "reps",
-    saveDay: "SAVE DAY", saveAsTarget: "SAVE AS TARGET",
+    saveDay: "SAVE DAY", saveAsTarget: "SAVE AS TARGET", newExercise: "New exercise", removeExercise: "Remove this exercise from the day?",
   },
   es: {
     tagline: "UNA SERIE. AL FALLO. SIN EXCUSAS.",
@@ -194,7 +194,7 @@ const STRINGS = {
     historyFor: "Historial de", leanMassKg: "M. Magra (kg)", saveChanges: "GUARDAR CAMBIOS", add: "AGREGAR",
     fatShort: "Grasa", leanShort: "M. Magra",
     logSession: "REGISTRAR SESIÓN", positive: "positivas", slowNegatives: "negativas lentas", hold: "isométrico", repsWord: "reps",
-    saveDay: "GUARDAR DÍA", saveAsTarget: "GUARDAR OBJETIVO",
+    saveDay: "GUARDAR DÍA", saveAsTarget: "GUARDAR OBJETIVO", newExercise: "Ejercicio nuevo", removeExercise: "¿Quitar este ejercicio del día?",
   },
 };
 
@@ -259,7 +259,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0824-1251";
+const BUILD = "0824-1303";
 
 let SCALE = 1;
 function px(n) {
@@ -411,9 +411,25 @@ const PROTOCOLS = {
   submax: { label: "Sub-maximal (not to failure)", desc: "Fixed target reps, stopping short of failure — safety priority on high-risk lifts." },
 };
 
-function getGroups(routineKey, levelKey) {
+function getGroups(routineKey, levelKey, config) {
   const r = getRoutines(levelKey)[routineKey];
-  return r.groups || r.slots.map((s) => [s.id]);
+  const groups = (r.groups || r.slots.map((s) => [s.id])).map((g) => g.slice());
+  if (!config) return groups;
+
+  // Keep only what the day still has, then append anything added by hand.
+  const known = new Set(config.map((s) => s.slotId));
+  const listed = new Set(groups.flat());
+  const kept = groups.map((g) => g.filter((id) => known.has(id))).filter((g) => g.length);
+  config.forEach((s) => { if (!listed.has(s.slotId)) kept.push([s.slotId]); });
+  return kept;
+}
+
+// A slot the user created has no entry in the routine definition; this fills in
+// what the UI expects for it.
+function slotDefinition(base, slot) {
+  const def = base.slots.find((s) => s.id === slot.slotId);
+  if (def) return def;
+  return { id: slot.slotId, name: slot.name || "", options: [slot.exercise].filter(Boolean), custom: true };
 }
 
 function formatMeta(slot) {
@@ -1812,6 +1828,21 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
 
   // The same figures, written to the routine instead of the history. Blank
   // fields are left as they were rather than wiped.
+  const setSlots = (routineKey, slots) => setRoutineConfig({ ...routineConfig, [routineKey]: slots });
+
+  const addSlot = (routineKey) => setSlots(routineKey, [...(routineConfig[routineKey] || []), {
+    slotId: "cs" + Date.now(),
+    exercise: "", name: "", protocol: "fallo", timeBased: false, weightUnit: "kg",
+    targetWeight: "", targetReps: 8, targetNegatives: 1, targetExtra1: 3, targetExtra2: 3,
+    targetSeconds: 30, note: "",
+  }]);
+
+  const removeSlot = (routineKey, slotId) =>
+    setSlots(routineKey, (routineConfig[routineKey] || []).filter((s) => s.slotId !== slotId));
+
+  const renameSlot = (routineKey, slotId, exercise) =>
+    setSlots(routineKey, (routineConfig[routineKey] || []).map((s) => (s.slotId === slotId ? { ...s, exercise } : s)));
+
   const saveTargets = async (routineKey, entries) => {
     const next = routineConfig[routineKey].map((slot) => {
       const e = entries.find((x) => x.slotId === slot.slotId);
@@ -1846,7 +1877,9 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
   // On desktop logging happens in the days column, so the history stays put
   // beside it — that is exactly what you compare against while filling it in.
   if (screen.mode === "log" && !isWide) {
-    return <LogSession routineKey={screen.key} config={routineConfig[screen.key]} workouts={workouts} level={level} onCancel={backFromSub} onFinish={finishLog} onSaveTargets={saveTargets} />;
+    return <LogSession routineKey={screen.key} config={routineConfig[screen.key]} workouts={workouts} level={level} onCancel={backFromSub} onFinish={finishLog} onSaveTargets={saveTargets}
+      onAddSlot={() => addSlot(screen.key)} onRemoveSlot={(id) => removeSlot(screen.key, id)}
+      onRenameSlot={(id, name) => renameSlot(screen.key, id, name)} />;
   }
   const loggingKey = isWide && screen.mode === "log" ? screen.key : null;
   return (
@@ -1860,6 +1893,9 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
             onCancel={() => setScreen({ mode: "list" })}
             onFinish={finishLog}
             onSaveTargets={saveTargets}
+            onAddSlot={() => addSlot(loggingKey)}
+            onRemoveSlot={(id) => removeSlot(loggingKey, id)}
+            onRenameSlot={(id, name) => renameSlot(loggingKey, id, name)}
           />
         </div>
       ) : (
@@ -1896,7 +1932,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
             <ChevronRight size={px(18)} color="#8A8D93" style={{ flexShrink: 0 }} />
           </div>
           <div style={{ marginTop: 5 }}>
-            {getGroups(key, level).map((groupIds, gi) => (
+            {getGroups(key, level, routineConfig[key]).map((groupIds, gi) => (
               <div key={gi} style={{ marginTop: gi > 0 ? 4 : 0, paddingLeft: 7,
                                      // Transparent border on non-supersets keeps every row on the
                                      // same left edge, so the weight column never shifts.
@@ -2060,7 +2096,7 @@ function SlotRowEditor({ slot, slotDef, onChange, onDelete, onDone }) {
 
 function RoutineView({ routineKey, config, workouts, level, inline, suggested, readOnly, onSaveSlot, onBack, onEdit, onLog }) {
   const base = getRoutines(level)[routineKey];
-  const groups = getGroups(routineKey, level);
+  const groups = getGroups(routineKey, level, config);
   const [openSlot, setOpenSlot] = useState(null);
   return (
     <div className={inline ? "inline-card" : undefined}>
@@ -2091,7 +2127,7 @@ function RoutineView({ routineKey, config, workouts, level, inline, suggested, r
           )}
           {groupIds.map((slotId, si) => {
             const slot = config.find((s) => s.slotId === slotId);
-            const slotDef = base.slots.find((s) => s.id === slotId);
+            const slotDef = slotDefinition(base, slot);
             return (
               inline && !readOnly && openSlot === slotId ? (
                 <SlotRowEditor
@@ -2143,9 +2179,9 @@ function RoutineView({ routineKey, config, workouts, level, inline, suggested, r
   );
 }
 
-function LogSession({ routineKey, config, workouts, level, inline, onCancel, onFinish, onSaveTargets }) {
+function LogSession({ routineKey, config, workouts, level, inline, onCancel, onFinish, onSaveTargets, onAddSlot, onRemoveSlot, onRenameSlot }) {
   const base = getRoutines(level)[routineKey];
-  const groups = getGroups(routineKey, level);
+  const groups = getGroups(routineKey, level, config);
   const roomFactor = !inline ? 1 : (config.length <= 2 ? 1.3 : config.length === 3 ? 1.15 : config.length === 4 ? 1.05 : 1);
   const lp = (n) => px(Math.round(n * roomFactor));
   const [entries, setEntries] = useState(config.map((s) => ({
@@ -2170,10 +2206,14 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
     <div className={inline ? "inline-card" : undefined}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexShrink: 0 }}>
         <button onClick={onCancel} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer" }}><X size={lp(20)} /></button>
-        <div>
-          <span className="disp" style={{ fontSize: lp(18), textTransform: "uppercase" }}>Day {routineKey}</span>
+        <div style={{ minWidth: 0 }}>
+          <span className="disp" style={{ fontSize: lp(18), textTransform: "uppercase" }}>{t("day")} {routineKey}</span>
           <div className="disp" style={{ fontSize: lp(13), fontWeight: 700, color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.6, marginTop: 1 }}>{tx(base.label)}</div>
         </div>
+        <button onClick={onAddSlot} title={t("newExercise")}
+          style={{ marginLeft: "auto", background: "none", border: "1px solid #3A3F47", color: "#8A8D93", cursor: "pointer", padding: "4px 9px", display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+          <Plus size={lp(15)} /><span className="disp" style={{ fontSize: lp(11), textTransform: "uppercase" }}>{t("add")}</span>
+        </button>
       </div>
 
       <div className={inline ? "log-body" : undefined}>
@@ -2193,7 +2233,25 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
                 display: inline ? "flex" : "block", alignItems: inline ? "center" : undefined, gap: inline ? 14 : 0,
               }}>
                 <div style={{ flex: inline ? 1 : undefined, minWidth: 0 }}>
-                  <div className="disp" style={{ fontSize: lp(14), marginBottom: 2 }}>{shortName(slot.exercise)}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {/* An exercise added by hand has no name yet, so it is typed
+                        here; the history then follows that name. */}
+                    {slotDef.custom ? (
+                      <input
+                        value={slot.exercise || ""}
+                        placeholder={t("newExercise")}
+                        onChange={(e) => onRenameSlot && onRenameSlot(slot.slotId, e.target.value)}
+                        style={{ ...input, padding: "4px 8px", fontSize: lp(14), flex: 1, minWidth: 0 }}
+                      />
+                    ) : (
+                      <div className="disp" style={{ fontSize: lp(14), marginBottom: 2, flex: 1, minWidth: 0 }}>{shortName(slot.exercise)}</div>
+                    )}
+                    <button
+                      onClick={() => { if (confirm(t("removeExercise"))) onRemoveSlot && onRemoveSlot(slot.slotId); }}
+                      style={{ background: "none", border: "none", color: "#3A3F47", cursor: "pointer", padding: 2, flexShrink: 0 }}>
+                      <Trash2 size={lp(14)} />
+                    </button>
+                  </div>
                   <div className="mono" style={{ fontSize: lp(11), color: "#C81E3A", marginBottom: 4 }}>
                     {slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)} · {t("target")} <MetaRow slot={slot} />{slot.note ? ` · ${slot.note}` : ""}
                   </div>
