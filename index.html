@@ -259,7 +259,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0824-1311";
+const BUILD = "0824-1315";
 
 let SCALE = 1;
 function px(n) {
@@ -426,6 +426,49 @@ function getGroups(routineKey, levelKey, config) {
 
 // A slot the user created has no entry in the routine definition; this fills in
 // what the UI expects for it.
+// Every exercise the app has seen: the built-in routines, whatever the days
+// hold now, and anything ever logged. Picking one from here brings back the
+// protocol and unit it was used with, so the right fields appear.
+function exerciseCatalog(workouts, routineConfig) {
+  const seen = new Map();
+  const put = (name, data) => {
+    if (!name) return;
+    const prev = seen.get(name) || {};
+    seen.set(name, { name, ...data, ...prev });   // first writer wins: newest first
+  };
+
+  // Most recent sessions first, so the latest setup is the one remembered.
+  workouts.slice()
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .forEach((w) => (w.entries || []).forEach((e) => put(e.exercise, {
+      protocol: e.protocol, weightUnit: e.weightUnit || "kg", timeBased: !!e.timeBased,
+    })));
+
+  Object.values(routineConfig || {}).forEach((slots) => (slots || []).forEach((s) => put(s.exercise, {
+    protocol: s.protocol, weightUnit: s.weightUnit || "kg", timeBased: !!s.timeBased,
+    targetWeight: s.targetWeight, targetReps: s.targetReps, targetNegatives: s.targetNegatives,
+    targetExtra1: s.targetExtra1, targetExtra2: s.targetExtra2, targetSeconds: s.targetSeconds,
+  })));
+
+  Object.values(ROUTINE_LEVELS).forEach((lvl) =>
+    Object.values(lvl.routines || {}).forEach((day) => (day.slots || []).forEach((def) =>
+      (def.options || []).forEach((name) => put(name, {
+        protocol: def.isPreagotamiento ? "fallo" : (def.defaultProtocol || "fallo"),
+        weightUnit: def.weightUnit || "kg", timeBased: !!def.isTimeBased,
+      })))));
+
+  return Array.from(seen.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function searchExercises(catalog, query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return catalog
+    .filter((x) => x.name.toLowerCase().includes(q))
+    .sort((a, b) => (b.name.toLowerCase().startsWith(q) ? 1 : 0) - (a.name.toLowerCase().startsWith(q) ? 1 : 0))
+    .slice(0, 7);
+}
+
 function slotDefinition(base, slot) {
   const def = base.slots.find((s) => s.id === slot.slotId);
   if (def) return def;
@@ -1880,7 +1923,8 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
     return <LogSession routineKey={screen.key} config={routineConfig[screen.key]} workouts={workouts} level={level} onCancel={backFromSub} onFinish={finishLog} onSaveTargets={saveTargets}
       onAddSlot={() => addSlot(screen.key)} onRemoveSlot={(id) => removeSlot(screen.key, id)}
       onRenameSlot={(id, name) => renameSlot(screen.key, id, name)}
-      onSaveSlot={(next) => setSlots(screen.key, routineConfig[screen.key].map((s) => (s.slotId === next.slotId ? next : s)))} />;
+      onSaveSlot={(next) => setSlots(screen.key, routineConfig[screen.key].map((s) => (s.slotId === next.slotId ? next : s)))}
+      allConfig={routineConfig} />;
   }
   const loggingKey = isWide && screen.mode === "log" ? screen.key : null;
   return (
@@ -1898,6 +1942,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
             onRemoveSlot={(id) => removeSlot(loggingKey, id)}
             onRenameSlot={(id, name) => renameSlot(loggingKey, id, name)}
             onSaveSlot={(next) => setSlots(loggingKey, routineConfig[loggingKey].map((s) => (s.slotId === next.slotId ? next : s)))}
+            allConfig={routineConfig}
           />
         </div>
       ) : (
@@ -2181,12 +2226,14 @@ function RoutineView({ routineKey, config, workouts, level, inline, suggested, r
   );
 }
 
-function LogSession({ routineKey, config, workouts, level, inline, onCancel, onFinish, onSaveTargets, onAddSlot, onRemoveSlot, onRenameSlot, onSaveSlot }) {
+function LogSession({ routineKey, config, workouts, level, inline, onCancel, onFinish, onSaveTargets, onAddSlot, onRemoveSlot, onRenameSlot, onSaveSlot, allConfig }) {
   const base = getRoutines(level)[routineKey];
   const groups = getGroups(routineKey, level, config);
   const roomFactor = !inline ? 1 : (config.length <= 2 ? 1.3 : config.length === 3 ? 1.15 : config.length === 4 ? 1.05 : 1);
   const lp = (n) => px(Math.round(n * roomFactor));
   const [openSlot, setOpenSlot] = useState(null);
+  const [query, setQuery] = useState("");
+  const catalog = useMemo(() => exerciseCatalog(workouts, allConfig), [workouts, allConfig]);
   const blankEntry = (s) => ({
     slotId: s.slotId, exercise: s.exercise, protocol: s.protocol, timeBased: s.timeBased, weightUnit: s.weightUnit || "kg",
     weight: "", reps: "", negatives: "", repsBreakdown: ["", "", ""], seconds: "",
@@ -2253,12 +2300,29 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
                     {/* An exercise added by hand has no name yet, so it is typed
                         here; the history then follows that name. */}
                     {slotDef.custom ? (
-                      <input
-                        value={slot.exercise || ""}
-                        placeholder={t("newExercise")}
-                        onChange={(e) => onRenameSlot && onRenameSlot(slot.slotId, e.target.value)}
-                        style={{ ...input, padding: "4px 8px", fontSize: lp(14), flex: 1, minWidth: 0 }}
-                      />
+                      <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+                        <input
+                          value={slot.exercise || ""}
+                          placeholder={t("newExercise")}
+                          onChange={(e) => { setQuery(e.target.value); onRenameSlot && onRenameSlot(slot.slotId, e.target.value); }}
+                          style={{ ...input, padding: "4px 8px", fontSize: lp(14), width: "100%" }}
+                        />
+                        {openSlot !== slot.slotId && query && searchExercises(catalog, query).length > 0 && (
+                          <div style={{ position: "absolute", left: 0, right: 0, top: "100%", zIndex: 30, marginTop: 2,
+                                        background: "#1E2126", border: "1px solid #C81E3A", maxHeight: 180, overflowY: "auto" }}>
+                            {searchExercises(catalog, query).map((x) => (
+                              <button key={x.name} onClick={() => { setQuery(""); onSaveSlot && onSaveSlot({ ...slot, ...x, exercise: x.name }); }}
+                                style={{ display: "block", width: "100%", textAlign: "left", background: "none",
+                                         border: "none", borderBottom: "1px solid #2A2D33", padding: "7px 10px", cursor: "pointer" }}>
+                                <div className="disp" style={{ fontSize: lp(13) }}>{x.name}</div>
+                                <div className="mono" style={{ fontSize: lp(10), color: "#8A8D93", marginTop: 1 }}>
+                                  {x.timeBased ? t("holdToFailure") : tx(PROTOCOLS[x.protocol] ? PROTOCOLS[x.protocol].label : "")} · {x.weightUnit || "kg"}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <div className="disp" onClick={() => setOpenSlot(openSlot === slot.slotId ? null : slot.slotId)}
                         style={{ fontSize: lp(14), marginBottom: 2, flex: 1, minWidth: 0, cursor: "pointer" }}>
