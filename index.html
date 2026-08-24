@@ -141,7 +141,7 @@ const STRINGS = {
     orManual: "Not found — type the values below", pickedFrom: "auto-calculated from database",
     historyFor: "History for", leanMassKg: "Lean mass (kg)", saveChanges: "SAVE CHANGES", add: "ADD",
     fatShort: "Fat", leanShort: "Lean mass",
-    cycle: "Cycle",
+    cycle: "Cycle", nothingLogged: "Every field must be filled in before saving the session.",
     logSession: "LOG SESSION", positive: "positive", slowNegatives: "slow negatives", hold: "hold", repsWord: "reps",
     saveDay: "SAVE DAY", saveAsTarget: "SAVE AS TARGET", newExercise: "New exercise", removeExercise: "Remove this exercise from the day?",
   },
@@ -194,7 +194,7 @@ const STRINGS = {
     orManual: "No encontrado — cargá los valores abajo", pickedFrom: "calculado desde la base",
     historyFor: "Historial de", leanMassKg: "M. Magra (kg)", saveChanges: "GUARDAR CAMBIOS", add: "AGREGAR",
     fatShort: "Grasa", leanShort: "M. Magra",
-    cycle: "Ciclo",
+    cycle: "Ciclo", nothingLogged: "Completá todas las casillas antes de registrar la sesión.",
     logSession: "REGISTRAR SESIÓN", positive: "positivas", slowNegatives: "negativas lentas", hold: "isométrico", repsWord: "reps",
     saveDay: "GUARDAR DÍA", saveAsTarget: "GUARDAR OBJETIVO", newExercise: "Ejercicio nuevo", removeExercise: "¿Quitar este ejercicio del día?",
   },
@@ -261,7 +261,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0824-1341";
+const BUILD = "0824-1347";
 
 let SCALE = 1;
 function px(n) {
@@ -2252,6 +2252,17 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
   const [openSlot, setOpenSlot] = useState(null);
   const [query, setQuery] = useState("");
   const catalog = useMemo(() => exerciseCatalog(workouts, allConfig), [workouts, allConfig]);
+  // A session is recorded only when every field of every exercise carries a
+  // figure: a half-filled day would leave gaps in each exercise's own run.
+  const complete = (e) => {
+    const has = (v) => v !== "" && v !== null && v !== undefined && Number(v) > 0;
+    if (!has(e.weight)) return false;
+    if (e.timeBased) return has(e.seconds);
+    if (e.protocol === "rest_pause") return (e.repsBreakdown || []).every(has);
+    if (e.protocol === "negativas") return has(e.reps) && has(e.negatives);
+    return has(e.reps);
+  };
+
   const blankEntry = (s) => ({
     slotId: s.slotId, exercise: s.exercise, protocol: s.protocol, timeBased: s.timeBased, weightUnit: s.weightUnit || "kg",
     weight: "", reps: "", negatives: "", repsBreakdown: ["", "", ""], seconds: "",
@@ -2402,6 +2413,7 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
       {/* Same figures, two destinations: the history, or the day's targets. */}
       <div style={{ display: "flex", gap: 8, marginTop: 6, flexShrink: 0 }}>
         <button onClick={() => {
+          if (!entries.length || !entries.every(complete)) { alert(t("nothingLogged")); return; }
           const cleaned = entries.map((e) => ({
             ...e,
             reps: e.timeBased ? 0 : (e.protocol === "rest_pause" ? e.repsBreakdown.reduce((s, r) => s + (Number(r) || 0), 0) : Number(e.reps) || 0),
