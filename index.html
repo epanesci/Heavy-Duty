@@ -261,7 +261,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0828-1111";
+const BUILD = "0828-1122";
 
 let SCALE = 1;
 function px(n) {
@@ -2913,6 +2913,9 @@ function SubTab({ label, active, onClick }) {
 
 function BodyComposition({ bodystats, setBodystats }) {
   const isWide = useIsWide();
+  // FFMI leads: it is the figure that says whether the weight being gained is
+  // muscle, which is the point of tracking this at all.
+  const [metric, setMetric] = useState("ffmi");
   const [weight, setWeight] = useState("");
   const [bodyFat, setBodyFat] = useState("");
   const [height, setHeight] = useState("190");
@@ -2945,24 +2948,30 @@ function BodyComposition({ bodystats, setBodystats }) {
 
       {latestCalc && (
         <div style={{ display: "flex", gap: 10, marginTop: isWide ? 0 : 16 }}>
-          <StatCard value={latestCalc.lean} label={t("leanMassKg")} />
-          <StatCard value={latestCalc.ffmi ?? "—"} label="FFMI" />
+          <StatCard value={latestCalc.ffmi ?? "—"} label="FFMI"
+            active={metric === "ffmi"} onClick={() => setMetric("ffmi")} />
+          <StatCard value={latestCalc.lean} label={t("leanMassKg")}
+            active={metric === "lean"} onClick={() => setMetric("lean")} />
+          <StatCard value={latestCalc.weight} label={t("phWeightKg")}
+            active={metric === "weight"} onClick={() => setMetric("weight")} />
         </div>
       )}
 
       {ffmiData.length >= 2 && CHARTS_OK ? (
         <div className={isWide ? "chart-fill" : undefined} style={{ ...card, padding: "18px 8px 8px", marginTop: isWide ? 0 : 16 }}>
-          <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", padding: "0 8px 8px" }}>{t("bodyWeightKg")}</div>
+          <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", padding: "0 8px 8px" }}>
+            {metric === "ffmi" ? "FFMI" : metric === "lean" ? t("leanMassKg") : t("bodyWeightKg")}
+          </div>
           <div className={isWide ? "chart-area" : undefined}>
           <ResponsiveContainer width="100%" height={isWide ? "100%" : 180}>
             <LineChart data={ffmiData}>
               <CartesianGrid stroke="#2A2D33" vertical={false} />
               <XAxis dataKey="label" stroke="#8A8D93" fontSize={10} />
-              <YAxis stroke="#8A8D93" fontSize={10} domain={["dataMin - 2", "dataMax + 3"]} />
+              <YAxis stroke="#8A8D93" fontSize={10} domain={metric === "ffmi" ? ["dataMin - 0.5", "dataMax + 0.7"] : ["dataMin - 2", "dataMax + 3"]} />
               <Tooltip contentStyle={{ background: "#1E2126", border: "1px solid #2A2D33", fontSize: px(12) }} labelStyle={{ color: "#E8E6E1" }} />
-              <Line type="monotone" dataKey="weight" stroke="#C81E3A" strokeWidth={2} dot={{ fill: "#C81E3A", r: 3 }}>
+              <Line type="monotone" dataKey={metric} stroke="#C81E3A" strokeWidth={2} dot={{ fill: "#C81E3A", r: 3 }}>
                 {LabelList && isWide && (
-                  <LabelList dataKey="weight" position="top" offset={8}
+                  <LabelList dataKey={metric} position="top" offset={8}
                     style={{ fill: "#E8E6E1", fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }} />
                 )}
               </Line>
@@ -2999,12 +3008,18 @@ function BodyComposition({ bodystats, setBodystats }) {
   );
 }
 
-function StatCard({ value, label }) {
+function StatCard({ value, label, active, onClick }) {
+  // Doubles as the chart's selector when given an onClick.
+  const Tag = onClick ? "button" : "div";
   return (
-    <div style={{ ...card, flex: 1, textAlign: "center", padding: 16 }}>
-      <div className="mono" style={{ fontSize: px(24), fontWeight: 600, color: "#C81E3A" }}>{value}</div>
-      <div className="disp" style={{ fontSize: px(10), color: "#8A8D93", textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
-    </div>
+    <Tag onClick={onClick}
+      style={{ ...card, flex: 1, minWidth: 0, textAlign: "center", padding: 14,
+               cursor: onClick ? "pointer" : "default",
+               border: "1px solid " + (active ? "#C81E3A" : "#2A2D33"),
+               background: active ? "#20232A" : card.background }}>
+      <div className="mono" style={{ fontSize: px(22), fontWeight: 600, color: active || !onClick ? "#C81E3A" : "#8A8D93" }}>{value}</div>
+      <div className="disp" style={{ fontSize: px(10), color: "#8A8D93", textTransform: "uppercase", letterSpacing: 0.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</div>
+    </Tag>
   );
 }
 
