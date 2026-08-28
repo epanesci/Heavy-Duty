@@ -261,7 +261,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0824-1404";
+const BUILD = "0828-1053";
 
 let SCALE = 1;
 function px(n) {
@@ -2053,17 +2053,25 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
                               <span className="disp" style={{ fontSize: px(12), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
                                 {shortName(slot.exercise)}
                               </span>
-                              {entry ? (
-                                <span className="mono" style={{ fontSize: px(11), color: "#8A8D93", whiteSpace: "nowrap" }}>
-                                  <span style={{ color: "#3A3F47" }}>#{num} </span>
-                                  {entry.weight ? `${entry.weight}${entry.weightUnit || "kg"} · ` : ""}
-                                  {entry.timeBased
-                                    ? `${entry.seconds || 0}s`
-                                    : entry.protocol === "rest_pause" && entry.repsBreakdown
-                                    ? `${entry.repsBreakdown.filter((r) => r).join("+")} ${t("repsWord")}`
-                                    : `${entry.reps || 0} ${t("repsWord")}${entry.negatives ? ` + ${entry.negatives} neg` : ""}`}
-                                </span>
-                              ) : (
+                              {entry ? (() => {
+                                // Positives only, the same rule the targets use.
+                                const positives = entry.protocol === "rest_pause" && entry.repsBreakdown
+                                  ? Number(entry.repsBreakdown[0]) || 0
+                                  : Number(entry.reps) || 0;
+                                const rm = entry.timeBased ? null : calcOneRM(entry.weight, positives);
+                                return (
+                                  <span className="mono" style={{ fontSize: px(11), color: "#8A8D93", whiteSpace: "nowrap" }}>
+                                    <span style={{ color: "#3A3F47" }}>#{num} </span>
+                                    {entry.weight ? `${entry.weight}${entry.weightUnit || "kg"} · ` : ""}
+                                    {entry.timeBased
+                                      ? `${entry.seconds || 0}s`
+                                      : entry.protocol === "rest_pause" && entry.repsBreakdown
+                                      ? `${entry.repsBreakdown.filter((r) => r).join("+")} ${t("repsWord")}`
+                                      : `${entry.reps || 0} ${t("repsWord")}${entry.negatives ? ` + ${entry.negatives} neg` : ""}`}
+                                    {rm ? <> (<b>{rm}{entry.weightUnit || "kg"}</b>)</> : ""}
+                                  </span>
+                                );
+                              })() : (
                                 <span className="mono" style={{ fontSize: px(11), color: "#3A3F47" }}>—</span>
                               )}
                             </div>
@@ -2264,13 +2272,45 @@ function RoutineView({ routineKey, config, workouts, level, inline, suggested, r
   );
 }
 
+// Name field for a freshly added exercise. It keeps its own search text, so
+// two new rows on the same day filter independently of one another.
+function ExerciseNameField({ slot, catalog, size, onRename, onPick }) {
+  const [query, setQuery] = useState("");
+  const hits = searchExercises(catalog, query);
+  return (
+    <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+      <input
+        autoFocus
+        value={slot.exercise || ""}
+        placeholder={t("newExercise")}
+        onChange={(e) => { setQuery(e.target.value); onRename(slot.slotId, e.target.value); }}
+        style={{ ...input, padding: "4px 8px", fontSize: size(14), width: "100%" }}
+      />
+      {query.trim() !== "" && hits.length > 0 && (
+        <div style={{ position: "absolute", left: 0, right: 0, top: "100%", zIndex: 30, marginTop: 2,
+                      background: "#1E2126", border: "1px solid #C81E3A", maxHeight: 190, overflowY: "auto" }}>
+          {hits.map((x) => (
+            <button key={x.name} onClick={() => { setQuery(""); onPick({ ...slot, ...x, exercise: x.name }); }}
+              style={{ display: "block", width: "100%", textAlign: "left", background: "none",
+                       border: "none", borderBottom: "1px solid #2A2D33", padding: "7px 10px", cursor: "pointer" }}>
+              <div className="disp" style={{ fontSize: size(13) }}>{x.name}</div>
+              <div className="mono" style={{ fontSize: size(10), color: "#8A8D93", marginTop: 1 }}>
+                {x.timeBased ? t("holdToFailure") : tx(PROTOCOLS[x.protocol] ? PROTOCOLS[x.protocol].label : "")} · {x.weightUnit || "kg"}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LogSession({ routineKey, config, workouts, level, inline, onCancel, onFinish, onSaveTargets, onAddSlot, onRemoveSlot, onRenameSlot, onSaveSlot, allConfig }) {
   const base = getRoutines(level)[routineKey];
   const groups = getGroups(routineKey, level, config);
   const roomFactor = !inline ? 1 : (config.length <= 2 ? 1.3 : config.length === 3 ? 1.15 : config.length === 4 ? 1.05 : 1);
   const lp = (n) => px(Math.round(n * roomFactor));
   const [openSlot, setOpenSlot] = useState(null);
-  const [query, setQuery] = useState("");
   const catalog = useMemo(() => exerciseCatalog(workouts, allConfig), [workouts, allConfig]);
   // A session is recorded only when every field of every exercise carries a
   // figure: a half-filled day would leave gaps in each exercise's own run.
@@ -2351,29 +2391,11 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
                     {/* The name field belongs to the moment of adding: once the
                         exercise has one it behaves like every other row. */}
                     {slotDef.custom && !slot.exercise ? (
-                      <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
-                        <input
-                          value={slot.exercise || ""}
-                          placeholder={t("newExercise")}
-                          onChange={(e) => { setQuery(e.target.value); onRenameSlot && onRenameSlot(slot.slotId, e.target.value); }}
-                          style={{ ...input, padding: "4px 8px", fontSize: lp(14), width: "100%" }}
-                        />
-                        {openSlot !== slot.slotId && query && searchExercises(catalog, query).length > 0 && (
-                          <div style={{ position: "absolute", left: 0, right: 0, top: "100%", zIndex: 30, marginTop: 2,
-                                        background: "#1E2126", border: "1px solid #C81E3A", maxHeight: 180, overflowY: "auto" }}>
-                            {searchExercises(catalog, query).map((x) => (
-                              <button key={x.name} onClick={() => { setQuery(""); onSaveSlot && onSaveSlot({ ...slot, ...x, exercise: x.name }); }}
-                                style={{ display: "block", width: "100%", textAlign: "left", background: "none",
-                                         border: "none", borderBottom: "1px solid #2A2D33", padding: "7px 10px", cursor: "pointer" }}>
-                                <div className="disp" style={{ fontSize: lp(13) }}>{x.name}</div>
-                                <div className="mono" style={{ fontSize: lp(10), color: "#8A8D93", marginTop: 1 }}>
-                                  {x.timeBased ? t("holdToFailure") : tx(PROTOCOLS[x.protocol] ? PROTOCOLS[x.protocol].label : "")} · {x.weightUnit || "kg"}
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <ExerciseNameField
+                        slot={slot} catalog={catalog} size={lp}
+                        onRename={(id, name) => onRenameSlot && onRenameSlot(id, name)}
+                        onPick={(next) => onSaveSlot && onSaveSlot(next)}
+                      />
                     ) : (
                       <div className="disp" onClick={() => setOpenSlot(openSlot === slot.slotId ? null : slot.slotId)}
                         style={{ fontSize: lp(14), marginBottom: 2, flex: 1, minWidth: 0, cursor: "pointer" }}>
