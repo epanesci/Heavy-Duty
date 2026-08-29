@@ -261,7 +261,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0828-1122";
+const BUILD = "0829-1558";
 
 let SCALE = 1;
 function px(n) {
@@ -440,6 +440,25 @@ function getGroups(routineKey, levelKey, config) {
 // protocol and unit it was used with, so the right fields appear.
 // The nutrition day rolls over at 6am, not midnight: a late meal still belongs
 // to the day you had it, and the ticks are cleared when the new one starts.
+// Shares of the energy the macros themselves account for, not of the declared
+// calories: food tables don't add up to 4/4/9 exactly, so dividing by the
+// declared kcal left the three shares adding to something other than 100.
+// Rounded by largest remainder so they always total exactly 100.
+function macroShares(carbs, protein, fat) {
+  const parts = [(Number(carbs) || 0) * 4, (Number(protein) || 0) * 4, (Number(fat) || 0) * 9];
+  const total = parts.reduce((a, b) => a + b, 0);
+  if (!total) return [0, 0, 0];
+
+  const exact = parts.map((p) => (p / total) * 100);
+  const out = exact.map(Math.floor);
+  let left = 100 - out.reduce((a, b) => a + b, 0);
+  exact
+    .map((v, i) => [v - Math.floor(v), i])
+    .sort((a, b) => b[0] - a[0])
+    .forEach(([, i]) => { if (left > 0) { out[i]++; left--; } });
+  return out;
+}
+
 function nutritionDay(d = new Date()) {
   const shifted = new Date(d.getTime() - 6 * 3600 * 1000);
   return shifted.toISOString().slice(0, 10);
@@ -2536,6 +2555,7 @@ function Food({ mealPlans, setMealPlans, eaten, setEaten }) {
     });
     return acc;
   }, { kcal: 0, carbs: 0, protein: 0, fat: 0, fiber: 0 });
+  const shares = macroShares(dayTotals.carbs, dayTotals.protein, dayTotals.fat);
 
   return (
     <div className={isWide ? "food-screen" : undefined}>
@@ -2625,17 +2645,17 @@ function Food({ mealPlans, setMealPlans, eaten, setEaten }) {
           <div style={{ display: "flex", justifyContent: "space-between", textAlign: "center" }}>
             <div style={{ flex: 1 }}>
               <div className="mono" style={{ fontSize: px(20), fontWeight: 600, color: "#E8E6E1" }}>{n1(dayTotals.carbs)}g</div>
-              <div className="mono" style={{ fontSize: px(13), color: "#C81E3A", marginTop: 3, fontWeight: 600 }}>{dayTotals.kcal ? Math.round((dayTotals.carbs * 4 / dayTotals.kcal) * 100) : 0}%</div>
+              <div className="mono" style={{ fontSize: px(13), color: "#C81E3A", marginTop: 3, fontWeight: 600 }}>{shares[0]}%</div>
               <div className="disp" style={{ fontSize: px(9), color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("carbs")}</div>
             </div>
             <div style={{ flex: 1 }}>
               <div className="mono" style={{ fontSize: px(20), fontWeight: 600, color: "#E8E6E1" }}>{n1(dayTotals.protein)}g</div>
-              <div className="mono" style={{ fontSize: px(13), color: "#C81E3A", marginTop: 3, fontWeight: 600 }}>{dayTotals.kcal ? Math.round((dayTotals.protein * 4 / dayTotals.kcal) * 100) : 0}%</div>
+              <div className="mono" style={{ fontSize: px(13), color: "#C81E3A", marginTop: 3, fontWeight: 600 }}>{shares[1]}%</div>
               <div className="disp" style={{ fontSize: px(9), color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("protein")}</div>
             </div>
             <div style={{ flex: 1 }}>
               <div className="mono" style={{ fontSize: px(20), fontWeight: 600, color: "#E8E6E1" }}>{n1(dayTotals.fat)}g</div>
-              <div className="mono" style={{ fontSize: px(13), color: "#C81E3A", marginTop: 3, fontWeight: 600 }}>{dayTotals.kcal ? Math.round((dayTotals.fat * 9 / dayTotals.kcal) * 100) : 0}%</div>
+              <div className="mono" style={{ fontSize: px(13), color: "#C81E3A", marginTop: 3, fontWeight: 600 }}>{shares[2]}%</div>
               <div className="disp" style={{ fontSize: px(9), color: "#8A8D93", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("fat")}</div>
             </div>
             <div style={{ flex: 1 }}>
