@@ -263,7 +263,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0907-0553";
+const BUILD = "0907-0557";
 
 let SCALE = 1;
 function px(n) {
@@ -2148,17 +2148,26 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
 
 // One exercise, editable in place: pick the movement, the protocol and the
 // numbers that protocol actually needs.
-function SlotRowEditor({ slot, slotDef, isFirst, catalog, onChange, onDelete, onDone }) {
+// One exercise, fully configured in place. This is the whole editor: it is the
+// same view whether the exercise was just added or is being changed, and every
+// field appears exactly once.
+function SlotRowEditor({ slot, slotDef, catalog, isFirst, canMoveUp, canMoveDown, size, onChange, onMove, onDelete, onDone }) {
   const [draft, setDraft] = useState(slot);
+  const s = size || px;
   const set = (patch) => {
     const next = { ...draft, ...patch };
     setDraft(next);
     onChange(next);
   };
-  const numStyle = { ...input, padding: "5px 6px", fontSize: px(13), width: "100%", textAlign: "center" };
+
+  const numStyle = { ...input, padding: "6px 6px", fontSize: s(13), width: "100%", textAlign: "center" };
+  const iconBtn = (enabled) => ({
+    background: "none", border: "none", padding: 3, flexShrink: 0,
+    color: enabled ? "#8A8D93" : "#23262B", cursor: enabled ? "pointer" : "default",
+  });
   const Field = ({ label, children }) => (
-    <label style={{ display: "block" }}>
-      <span className="mono" style={{ fontSize: px(9), color: "#8A8D93", display: "block", textAlign: "center", marginBottom: 1 }}>{label}</span>
+    <label style={{ display: "block", minWidth: 0 }}>
+      <span className="mono" style={{ fontSize: s(9), color: "#8A8D93", display: "block", textAlign: "center", marginBottom: 2 }}>{label}</span>
       {children}
     </label>
   );
@@ -2166,35 +2175,34 @@ function SlotRowEditor({ slot, slotDef, isFirst, catalog, onChange, onDelete, on
   return (
     <div style={{ ...card, marginBottom: 4, padding: "8px 10px", border: "1px solid #C81E3A" }}>
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-        {/* A hand-added exercise is named here, with suggestions; one that comes
-            from the routine picks among its own alternatives. */}
         {slotDef?.custom ? (
           <ExerciseNameField
-            slot={draft} catalog={catalog} size={px}
+            slot={draft} catalog={catalog} size={s}
             onRename={(id, name) => set({ exercise: name })}
-            onPick={(next) => { const { slotId, ...rest } = next; setDraft({ ...draft, ...rest }); onChange({ ...draft, ...rest }); }}
+            onPick={(next) => { const { slotId, ...rest } = next; set(rest); }}
           />
         ) : (
           <select value={draft.exercise} onChange={(e) => set({ exercise: e.target.value })}
-            style={{ ...input, padding: "5px 8px", fontSize: px(14), flex: 1, minWidth: 0 }}>
+            style={{ ...input, padding: "5px 8px", fontSize: s(14), flex: 1, minWidth: 0 }}>
             {(slotDef?.options || [draft.exercise]).map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
         )}
-        <button onClick={onDone} style={{ background: "none", border: "none", color: "#C81E3A", cursor: "pointer", padding: 4 }}><Check size={px(17)} /></button>
+        <button disabled={!canMoveUp} onClick={() => onMove(-1)} style={iconBtn(canMoveUp)}><ArrowUp size={s(15)} /></button>
+        <button disabled={!canMoveDown} onClick={() => onMove(1)} style={iconBtn(canMoveDown)}><ArrowDown size={s(15)} /></button>
+        <button onClick={onDelete} style={{ ...iconBtn(true), color: "#3A3F47" }}><Trash2 size={s(15)} /></button>
+        <button onClick={onDone} style={{ ...iconBtn(true), color: "#C81E3A" }}><Check size={s(18)} /></button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr", gap: 5, marginTop: 6 }}>
-        {/* The unit belongs to the exercise, not to a single session: some
-            machines are loaded in plates. A visible button rather than a
-            clickable caption, which read as a label and went unnoticed. */}
+      <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr 1fr", gap: 5, marginTop: 7 }}>
         <Field label={t("weight")}>
           <div style={{ display: "flex", gap: 4 }}>
             <input type="number" className="mono" value={draft.targetWeight ?? ""}
               onChange={(e) => set({ targetWeight: e.target.value === "" ? "" : Number(e.target.value) })}
               style={{ ...numStyle, flex: 1, minWidth: 0 }} />
+            {/* The unit belongs to the exercise: some machines load in plates. */}
             <button onClick={() => set({ weightUnit: (draft.weightUnit || "kg") === "kg" ? "T" : "kg" })}
               className="mono"
-              style={{ flexShrink: 0, width: 30, padding: "5px 0", cursor: "pointer", fontSize: px(12),
+              style={{ flexShrink: 0, width: 32, padding: "6px 0", cursor: "pointer", fontSize: s(12),
                        background: "#14161A", border: "1px solid #C81E3A", color: "#C81E3A" }}>
               {draft.weightUnit || "kg"}
             </button>
@@ -2213,7 +2221,6 @@ function SlotRowEditor({ slot, slotDef, isFirst, catalog, onChange, onDelete, on
           </Field>
         )}
 
-        {/* Only the extras the chosen protocol uses. */}
         {!draft.timeBased && draft.protocol === "negativas" && (
           <Field label={t("negatives")}>
             <input type="number" className="mono" value={draft.targetNegatives ?? ""}
@@ -2237,7 +2244,7 @@ function SlotRowEditor({ slot, slotDef, isFirst, catalog, onChange, onDelete, on
       <div style={{ display: "flex", gap: 5, marginTop: 6 }}>
         {!slotDef?.isPreagotamiento && !draft.timeBased && (
           <select value={draft.protocol} onChange={(e) => set({ protocol: e.target.value })}
-            style={{ ...input, padding: "5px 8px", fontSize: px(12), flex: 1, minWidth: 0 }}>
+            style={{ ...input, padding: "5px 8px", fontSize: s(12), flex: 1, minWidth: 0 }}>
             <option value="fallo">{tx(PROTOCOLS.fallo.label)}</option>
             <option value="rest_pause">{tx("Rest-pause")}</option>
             <option value="negativas">{tx("Negatives")}</option>
@@ -2246,7 +2253,7 @@ function SlotRowEditor({ slot, slotDef, isFirst, catalog, onChange, onDelete, on
         )}
         <input value={draft.note || ""} placeholder={t("note")}
           onChange={(e) => set({ note: e.target.value })}
-          style={{ ...input, padding: "5px 8px", fontSize: px(12), flex: 1, minWidth: 0 }} />
+          style={{ ...input, padding: "5px 8px", fontSize: s(12), flex: 1, minWidth: 0 }} />
       </div>
 
       {/* The first exercise of a day has nothing above it to pair with. */}
@@ -2258,100 +2265,13 @@ function SlotRowEditor({ slot, slotDef, isFirst, catalog, onChange, onDelete, on
                    color: draft.superset ? "#C81E3A" : "#8A8D93" }}>
           <span style={{ width: 12, height: 12, flexShrink: 0, border: "1px solid currentColor",
                          background: draft.superset ? "#C81E3A" : "transparent" }} />
-          <span className="mono" style={{ fontSize: px(11), letterSpacing: 0.5 }}>{t("supersetWithPrev")}</span>
+          <span className="mono" style={{ fontSize: s(11), letterSpacing: 0.5 }}>{t("supersetWithPrev")}</span>
         </button>
       )}
     </div>
   );
 }
 
-function RoutineView({ routineKey, config, workouts, level, inline, suggested, readOnly, onSaveSlot, onBack, onEdit, onLog }) {
-  const base = getRoutines(level)[routineKey];
-  const groups = getGroups(routineKey, level, config);
-  const [openSlot, setOpenSlot] = useState(null);
-  return (
-    <div className={inline ? "inline-card" : undefined}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: inline ? 8 : 14, flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
-          {/* Embedded in a card on desktop there is nothing to go back from. */}
-          {!inline && (
-            <button onClick={onBack} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer", alignSelf: "center" }}><X size={px(20)} /></button>
-          )}
-          <span className="disp" style={{ fontSize: px(18), textTransform: "uppercase" }}>{t("day")} {routineKey}</span>
-          {inline && (
-            <span className="disp" style={{ fontSize: px(12), fontWeight: 700, color: "#C81E3A", textTransform: "uppercase", letterSpacing: 0.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx(base.label)}</span>
-          )}
-        </div>
-        {suggested && (
-          <span className="mono" style={{ fontSize: px(9), color: "#C81E3A", border: "1px solid #C81E3A", padding: "1px 5px", letterSpacing: 0.5, flexShrink: 0, marginLeft: "auto", marginRight: 8 }}>{t("suggested")}</span>
-        )}
-        {!inline && (
-          <button onClick={onEdit} style={{ background: "none", border: "none", color: "#8A8D93", cursor: "pointer", flexShrink: 0 }}><Settings2 size={px(18)} /></button>
-        )}
-      </div>
-
-      <div className={inline ? "inline-scroll" : undefined}>
-      {groups.map((groupIds, gi) => (
-        <div key={gi} style={{ ...card, marginBottom: inline ? 5 : 10, padding: inline ? "8px 10px" : "12px 14px", borderLeft: groupIds.length > 1 ? "3px solid #C81E3A" : undefined }}>
-          {groupIds.length > 1 && (
-            <div className="mono" style={{ fontSize: px(10), color: "#C81E3A", letterSpacing: 1, marginBottom: 10 }}>{t("superset")}</div>
-          )}
-          {groupIds.map((slotId, si) => {
-            const slot = config.find((s) => s.slotId === slotId);
-            const slotDef = slotDefinition(base, slot);
-            return (
-              inline && !readOnly && openSlot === slotId ? (
-                <SlotRowEditor
-                  key={slotId} slot={slot} slotDef={slotDef}
-                  onChange={(next) => onSaveSlot && onSaveSlot(next)}
-                  onDone={() => setOpenSlot(null)}
-                />
-              ) : inline ? (
-                /* Two lines instead of five: the target sits beside the name and
-                   the previous record beside the muscle group. */
-                <div key={slotId} onClick={readOnly ? undefined : () => setOpenSlot(slotId)}
-                  style={{ paddingTop: si > 0 ? 7 : 0, marginTop: si > 0 ? 7 : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none", cursor: readOnly ? "inherit" : "pointer" }}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
-                    <span className="disp" style={{ fontSize: px(15), flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "42%" }}>{shortName(slot.exercise)}</span>
-                    <span className="mono" style={{ fontSize: px(12), color: "#E8E6E1", marginLeft: "auto", whiteSpace: "nowrap" }}><MetaRow slot={slot} /></span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0, marginTop: 1 }}>
-                    <span className="mono" style={{ fontSize: px(10), color: "#8A8D93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {tx(slotDef?.name)}{slot.note ? ` · ${slot.note}` : ""} · <span style={{ color: "#C81E3A" }}>{slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)}</span>
-                    </span>
-                    <span style={{ marginLeft: "auto", flexShrink: 0 }}>
-                      <PrevRecordLine workouts={workouts} exercise={slot.exercise} oneLine />
-                    </span>
-                  </div>
-                </div>
-              ) : (
-              <div key={slotId} style={{ paddingTop: si > 0 ? 10 : 0, marginTop: si > 0 ? 10 : 0, borderTop: si > 0 ? "1px solid #2A2D33" : "none" }}>
-                <div className="disp" style={{ fontSize: px(15) }}>{shortName(slot.exercise)}</div>
-                <div className="mono" style={{ fontSize: px(11), color: "#8A8D93", marginTop: 2 }}>{tx(slotDef?.name)}{slot.note ? ` · ${slot.note}` : ""}</div>
-                <div style={{ marginTop: 8 }}>
-                  <span className="mono" style={{ fontSize: px(11), color: "#C81E3A" }}>{slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)}</span>
-                  <div className="mono" style={{ fontSize: px(12), color: "#E8E6E1", marginTop: 4 }}>{t("target")}: <MetaRow slot={slot} /></div>
-                  <PrevRecordLine workouts={workouts} exercise={slot.exercise} />
-                </div>
-              </div>
-              )
-            );
-          })}
-        </div>
-      ))}
-      </div>
-
-      {!readOnly && (
-        <button onClick={onLog} style={{ ...btnPrimary, width: "100%", marginTop: inline ? 8 : 6, flexShrink: 0, padding: inline ? "9px 20px" : "12px 20px" }}>
-          <Plus size={px(16)} /> {t("logSession")}
-        </button>
-      )}
-    </div>
-  );
-}
-
-// Name field for a freshly added exercise. It keeps its own search text, so
-// two new rows on the same day filter independently of one another.
 function ExerciseNameField({ slot, catalog, size, onRename, onPick }) {
   // The typed text lives here and is only written to the slot when the name is
   // settled — on pick, on Enter or on leaving the field. Saving on every
@@ -2472,72 +2392,70 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
             const slot = config[i];
             const slotDef = slotDefinition(base, slot);
             const entry = entries[i] || blankEntry(slot);
+            const editing = openSlot === slot.slotId;
+
+            const rowFrame = {
+              paddingTop: si > 0 ? (inline ? 7 : 12) : 0,
+              marginTop: si > 0 ? (inline ? 7 : 12) : 0,
+              borderTop: si > 0 ? "1px solid #2A2D33" : "none",
+            };
+
+            // Editing replaces the row outright — the editor already holds the
+            // name and every setting, so nothing is shown twice.
+            if (editing) {
+              return (
+                <div key={slotId} style={rowFrame}>
+                  <SlotRowEditor
+                    slot={slot} slotDef={slotDef} catalog={catalog}
+                    isFirst={config[0] && config[0].slotId === slot.slotId}
+                    canMoveUp={i > 0} canMoveDown={i < config.length - 1}
+                    size={lp}
+                    onChange={(next) => onSaveSlot && onSaveSlot(next)}
+                    onMove={(dir) => onMoveSlot && onMoveSlot(slot.slotId, dir)}
+                    onDelete={() => { if (confirm(t("removeExercise"))) { setOpenSlot(null); onRemoveSlot && onRemoveSlot(slot.slotId); } }}
+                    onDone={() => setOpenSlot(null)}
+                  />
+                </div>
+              );
+            }
+
             return (
               <div key={slotId} style={{
-                paddingTop: si > 0 ? (inline ? 7 : 12) : 0, marginTop: si > 0 ? (inline ? 7 : 12) : 0,
-                borderTop: si > 0 ? "1px solid #2A2D33" : "none",
-                /* Wide enough to read the exercise and fill it in on one line. */
+                ...rowFrame,
                 display: inline ? "flex" : "block", alignItems: inline ? "center" : undefined, gap: inline ? 14 : 0,
               }}>
-                <div style={{ flex: inline ? 1 : undefined, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <div className="disp" onClick={() => setOpenSlot(openSlot === slot.slotId ? null : slot.slotId)}
-                      style={{ fontSize: lp(14), marginBottom: 2, flex: 1, minWidth: 0, cursor: "pointer",
-                               color: slot.exercise ? undefined : "#8A8D93" }}>
-                      {slot.exercise ? shortName(slot.exercise) : t("newExercise")}
-                    </div>
-                    <button disabled={i === 0}
-                      onClick={() => onMoveSlot && onMoveSlot(slot.slotId, -1)}
-                      style={{ background: "none", border: "none", color: i === 0 ? "#23262B" : "#8A8D93", cursor: i === 0 ? "default" : "pointer", padding: 2, flexShrink: 0 }}>
-                      <ArrowUp size={lp(14)} />
-                    </button>
-                    <button disabled={i === config.length - 1}
-                      onClick={() => onMoveSlot && onMoveSlot(slot.slotId, 1)}
-                      style={{ background: "none", border: "none", color: i === config.length - 1 ? "#23262B" : "#8A8D93", cursor: i === config.length - 1 ? "default" : "pointer", padding: 2, flexShrink: 0 }}>
-                      <ArrowDown size={lp(14)} />
-                    </button>
-                    <button
-                      onClick={() => { if (confirm(t("removeExercise"))) onRemoveSlot && onRemoveSlot(slot.slotId); }}
-                      style={{ background: "none", border: "none", color: "#3A3F47", cursor: "pointer", padding: 2, flexShrink: 0 }}>
-                      <Trash2 size={lp(14)} />
-                    </button>
+                <div onClick={() => setOpenSlot(slot.slotId)}
+                  style={{ flex: inline ? 1 : undefined, minWidth: 0, cursor: "pointer" }}>
+                  <div className="disp" style={{ fontSize: lp(14), marginBottom: 2, color: slot.exercise ? undefined : "#8A8D93" }}>
+                    {slot.exercise ? shortName(slot.exercise) : t("newExercise")}
                   </div>
-                  {openSlot === slot.slotId ? (
-                    <SlotRowEditor
-                      slot={slot} slotDef={slotDef} catalog={catalog} isFirst={config[0] && config[0].slotId === slot.slotId}
-                      onChange={(next) => onSaveSlot && onSaveSlot(next)}
-                      onDone={() => setOpenSlot(null)}
-                    />
-                  ) : (
-                    <>
-                      <div className="mono" style={{ fontSize: lp(11), color: "#C81E3A", marginBottom: 4 }}>
-                        {slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)} · {t("target")} <MetaRow slot={slot} />{slot.note ? ` · ${slot.note}` : ""}
-                      </div>
-                      <PrevRecordLine workouts={workouts} exercise={slot.exercise} />
-                    </>
-                  )}
+                  <div className="mono" style={{ fontSize: lp(11), color: "#C81E3A", marginBottom: 4 }}>
+                    {slot.timeBased ? t("holdToFailure") : tx(PROTOCOLS[slot.protocol].label)} · {t("target")} <MetaRow slot={slot} />{slot.note ? ` · ${slot.note}` : ""}
+                  </div>
+                  <PrevRecordLine workouts={workouts} exercise={slot.exercise} />
                 </div>
                 {!inline && <div style={{ marginTop: 8 }} />}
 
+                {/* What was actually done. The targets live in the editor. */}
                 <div style={{ display: "flex", gap: 6, width: inline ? 330 : undefined, flexShrink: 0 }}>
-                <input type="number" placeholder={slot.weightUnit || "kg"} value={entry.weight} onChange={(e) => update(i, "weight", e.target.value)} style={{ ...input, marginBottom: 0, minWidth: 0, width: inline ? 110 : 84, flexShrink: 0, padding: inline ? "7px 8px" : undefined, fontSize: lp(14) }} />
+                  <input type="number" placeholder={slot.weightUnit || "kg"} value={entry.weight} onChange={(e) => update(i, "weight", e.target.value)} style={{ ...input, marginBottom: 0, minWidth: 0, width: inline ? 110 : 84, flexShrink: 0, padding: inline ? "7px 8px" : undefined, fontSize: lp(14) }} />
 
-                {slot.timeBased ? (
-                  <input type="number" placeholder={t("phSeconds")} value={entry.seconds} onChange={(e) => update(i, "seconds", e.target.value)} style={{ ...input, flex: 1, minWidth: 0, fontSize: lp(14) }} />
-                ) : slot.protocol === "rest_pause" ? (
-                  <div style={{ display: "flex", gap: 6, minWidth: 0, flex: 1 }}>
-                    <input type="number" placeholder={t("phPositiveReps")} value={entry.repsBreakdown[0]} onChange={(e) => updateBreakdown(i, 0, e.target.value)} style={{ ...input, flex: 1, minWidth: 0, fontSize: lp(14) }} />
-                    <input type="number" placeholder="+15s" value={entry.repsBreakdown[1]} onChange={(e) => updateBreakdown(i, 1, e.target.value)} style={{ ...input, flex: 1, minWidth: 0, fontSize: lp(14) }} />
-                    <input type="number" placeholder="+15s" value={entry.repsBreakdown[2]} onChange={(e) => updateBreakdown(i, 2, e.target.value)} style={{ ...input, flex: 1, minWidth: 0, fontSize: lp(14) }} />
-                  </div>
-                ) : (
-                  <div style={{ display: "flex", gap: 6, flex: 1, minWidth: 0 }}>
-                    <input type="number" placeholder={t("phPositiveReps")} value={entry.reps} onChange={(e) => update(i, "reps", e.target.value)} style={{ ...input, marginBottom: 0, flex: 1, minWidth: 0, fontSize: lp(14) }} />
-                    {slot.protocol === "negativas" && (
-                      <input type="number" placeholder={t("phNegativeReps")} value={entry.negatives} onChange={(e) => update(i, "negatives", e.target.value)} style={{ ...input, flex: 1, minWidth: 0, fontSize: lp(14) }} />
-                    )}
-                  </div>
-                )}
+                  {slot.timeBased ? (
+                    <input type="number" placeholder={t("phSeconds")} value={entry.seconds} onChange={(e) => update(i, "seconds", e.target.value)} style={{ ...input, flex: 1, minWidth: 0, fontSize: lp(14) }} />
+                  ) : slot.protocol === "rest_pause" ? (
+                    <div style={{ display: "flex", gap: 6, minWidth: 0, flex: 1 }}>
+                      <input type="number" placeholder={t("phPositiveReps")} value={entry.repsBreakdown[0]} onChange={(e) => updateBreakdown(i, 0, e.target.value)} style={{ ...input, flex: 1, minWidth: 0, fontSize: lp(14) }} />
+                      <input type="number" placeholder="+15s" value={entry.repsBreakdown[1]} onChange={(e) => updateBreakdown(i, 1, e.target.value)} style={{ ...input, flex: 1, minWidth: 0, fontSize: lp(14) }} />
+                      <input type="number" placeholder="+15s" value={entry.repsBreakdown[2]} onChange={(e) => updateBreakdown(i, 2, e.target.value)} style={{ ...input, flex: 1, minWidth: 0, fontSize: lp(14) }} />
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", gap: 6, flex: 1, minWidth: 0 }}>
+                      <input type="number" placeholder={t("phPositiveReps")} value={entry.reps} onChange={(e) => update(i, "reps", e.target.value)} style={{ ...input, marginBottom: 0, flex: 1, minWidth: 0, fontSize: lp(14) }} />
+                      {slot.protocol === "negativas" && (
+                        <input type="number" placeholder={t("phNegativeReps")} value={entry.negatives} onChange={(e) => update(i, "negatives", e.target.value)} style={{ ...input, flex: 1, minWidth: 0, fontSize: lp(14) }} />
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );
