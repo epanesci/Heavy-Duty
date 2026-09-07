@@ -263,7 +263,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0907-0550";
+const BUILD = "0907-0553";
 
 let SCALE = 1;
 function px(n) {
@@ -2184,16 +2184,21 @@ function SlotRowEditor({ slot, slotDef, isFirst, catalog, onChange, onDelete, on
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr", gap: 5, marginTop: 6 }}>
-        {/* The unit is part of the exercise, not of a single session: some
-            machines are loaded in plates, so tapping it switches kg / T. */}
-        <Field label={
-          <span onClick={(e) => { e.preventDefault(); set({ weightUnit: (draft.weightUnit || "kg") === "kg" ? "T" : "kg" }); }}
-            style={{ cursor: "pointer", color: "#C81E3A" }}>
-            {t("weight")} ({draft.weightUnit || "kg"}) ⇄
-          </span>
-        }>
-          <input type="number" className="mono" value={draft.targetWeight ?? ""}
-            onChange={(e) => set({ targetWeight: e.target.value === "" ? "" : Number(e.target.value) })} style={numStyle} />
+        {/* The unit belongs to the exercise, not to a single session: some
+            machines are loaded in plates. A visible button rather than a
+            clickable caption, which read as a label and went unnoticed. */}
+        <Field label={t("weight")}>
+          <div style={{ display: "flex", gap: 4 }}>
+            <input type="number" className="mono" value={draft.targetWeight ?? ""}
+              onChange={(e) => set({ targetWeight: e.target.value === "" ? "" : Number(e.target.value) })}
+              style={{ ...numStyle, flex: 1, minWidth: 0 }} />
+            <button onClick={() => set({ weightUnit: (draft.weightUnit || "kg") === "kg" ? "T" : "kg" })}
+              className="mono"
+              style={{ flexShrink: 0, width: 30, padding: "5px 0", cursor: "pointer", fontSize: px(12),
+                       background: "#14161A", border: "1px solid #C81E3A", color: "#C81E3A" }}>
+              {draft.weightUnit || "kg"}
+            </button>
+          </div>
         </Field>
 
         {draft.timeBased ? (
