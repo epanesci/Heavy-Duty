@@ -263,7 +263,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0907-0537";
+const BUILD = "0907-0550";
 
 let SCALE = 1;
 function px(n) {
@@ -2148,7 +2148,7 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
 
 // One exercise, editable in place: pick the movement, the protocol and the
 // numbers that protocol actually needs.
-function SlotRowEditor({ slot, slotDef, isFirst, onChange, onDelete, onDone }) {
+function SlotRowEditor({ slot, slotDef, isFirst, catalog, onChange, onDelete, onDone }) {
   const [draft, setDraft] = useState(slot);
   const set = (patch) => {
     const next = { ...draft, ...patch };
@@ -2166,10 +2166,20 @@ function SlotRowEditor({ slot, slotDef, isFirst, onChange, onDelete, onDone }) {
   return (
     <div style={{ ...card, marginBottom: 4, padding: "8px 10px", border: "1px solid #C81E3A" }}>
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-        <select value={draft.exercise} onChange={(e) => set({ exercise: e.target.value })}
-          style={{ ...input, padding: "5px 8px", fontSize: px(14), flex: 1, minWidth: 0 }}>
-          {(slotDef?.options || [draft.exercise]).map((o) => <option key={o} value={o}>{o}</option>)}
-        </select>
+        {/* A hand-added exercise is named here, with suggestions; one that comes
+            from the routine picks among its own alternatives. */}
+        {slotDef?.custom ? (
+          <ExerciseNameField
+            slot={draft} catalog={catalog} size={px}
+            onRename={(id, name) => set({ exercise: name })}
+            onPick={(next) => { const { slotId, ...rest } = next; setDraft({ ...draft, ...rest }); onChange({ ...draft, ...rest }); }}
+          />
+        ) : (
+          <select value={draft.exercise} onChange={(e) => set({ exercise: e.target.value })}
+            style={{ ...input, padding: "5px 8px", fontSize: px(14), flex: 1, minWidth: 0 }}>
+            {(slotDef?.options || [draft.exercise]).map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+        )}
         <button onClick={onDone} style={{ background: "none", border: "none", color: "#C81E3A", cursor: "pointer", padding: 4 }}><Check size={px(17)} /></button>
       </div>
 
@@ -2402,6 +2412,13 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
   });
   const [entries, setEntries] = useState(config.map(blankEntry));
 
+  // A freshly added exercise opens straight into its editor: adding and editing
+  // are the same view, so there is nothing to configure in a second step.
+  useEffect(() => {
+    const blank = config.find((s) => !s.exercise);
+    if (blank) setOpenSlot(blank.slotId);
+  }, [config.length]);
+
   // The day can gain or lose an exercise while this screen is open, so the
   // fields follow the routine instead of the snapshot taken when it opened.
   const slotKey = config.map((s) => s.slotId).join("|");
@@ -2459,22 +2476,11 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
               }}>
                 <div style={{ flex: inline ? 1 : undefined, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    {/* An exercise added by hand has no name yet, so it is typed
-                        here; the history then follows that name. */}
-                    {/* The name field belongs to the moment of adding: once the
-                        exercise has one it behaves like every other row. */}
-                    {slotDef.custom && !slot.exercise ? (
-                      <ExerciseNameField
-                        slot={slot} catalog={catalog} size={lp}
-                        onRename={(id, name) => onRenameSlot && onRenameSlot(id, name)}
-                        onPick={(next) => onSaveSlot && onSaveSlot(next)}
-                      />
-                    ) : (
-                      <div className="disp" onClick={() => setOpenSlot(openSlot === slot.slotId ? null : slot.slotId)}
-                        style={{ fontSize: lp(14), marginBottom: 2, flex: 1, minWidth: 0, cursor: "pointer" }}>
-                        {shortName(slot.exercise)}
-                      </div>
-                    )}
+                    <div className="disp" onClick={() => setOpenSlot(openSlot === slot.slotId ? null : slot.slotId)}
+                      style={{ fontSize: lp(14), marginBottom: 2, flex: 1, minWidth: 0, cursor: "pointer",
+                               color: slot.exercise ? undefined : "#8A8D93" }}>
+                      {slot.exercise ? shortName(slot.exercise) : t("newExercise")}
+                    </div>
                     <button disabled={i === 0}
                       onClick={() => onMoveSlot && onMoveSlot(slot.slotId, -1)}
                       style={{ background: "none", border: "none", color: i === 0 ? "#23262B" : "#8A8D93", cursor: i === 0 ? "default" : "pointer", padding: 2, flexShrink: 0 }}>
@@ -2493,7 +2499,7 @@ function LogSession({ routineKey, config, workouts, level, inline, onCancel, onF
                   </div>
                   {openSlot === slot.slotId ? (
                     <SlotRowEditor
-                      slot={slot} slotDef={slotDef} isFirst={config[0] && config[0].slotId === slot.slotId}
+                      slot={slot} slotDef={slotDef} catalog={catalog} isFirst={config[0] && config[0].slotId === slot.slotId}
                       onChange={(next) => onSaveSlot && onSaveSlot(next)}
                       onDone={() => setOpenSlot(null)}
                     />
