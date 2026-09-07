@@ -261,7 +261,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0829-1558";
+const BUILD = "0907-0524";
 
 let SCALE = 1;
 function px(n) {
@@ -2304,22 +2304,32 @@ function RoutineView({ routineKey, config, workouts, level, inline, suggested, r
 // Name field for a freshly added exercise. It keeps its own search text, so
 // two new rows on the same day filter independently of one another.
 function ExerciseNameField({ slot, catalog, size, onRename, onPick }) {
-  const [query, setQuery] = useState("");
-  const hits = searchExercises(catalog, query);
+  // The typed text lives here and is only written to the slot when the name is
+  // settled — on pick, on Enter or on leaving the field. Saving on every
+  // keystroke made the row count as named after one letter, which closed this
+  // field before any suggestion could be read.
+  const [text, setText] = useState(slot.exercise || "");
+  const hits = searchExercises(catalog, text);
+
+  const commit = () => { if (text.trim()) onRename(slot.slotId, text.trim()); };
+
   return (
     <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
       <input
         autoFocus
-        value={slot.exercise || ""}
+        value={text}
         placeholder={t("newExercise")}
-        onChange={(e) => { setQuery(e.target.value); onRename(slot.slotId, e.target.value); }}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); commit(); } }}
         style={{ ...input, padding: "4px 8px", fontSize: size(14), width: "100%" }}
       />
-      {query.trim() !== "" && hits.length > 0 && (
+      {text.trim() !== "" && hits.length > 0 && (
         <div style={{ position: "absolute", left: 0, right: 0, top: "100%", zIndex: 30, marginTop: 2,
                       background: "#1E2126", border: "1px solid #C81E3A", maxHeight: 190, overflowY: "auto" }}>
           {hits.map((x) => (
-            <button key={x.name} onClick={() => { setQuery(""); onPick({ ...slot, ...x, exercise: x.name }); }}
+            <button key={x.name} onMouseDown={(e) => e.preventDefault()}
+              onClick={() => onPick({ ...slot, ...x, exercise: x.name })}
               style={{ display: "block", width: "100%", textAlign: "left", background: "none",
                        border: "none", borderBottom: "1px solid #2A2D33", padding: "7px 10px", cursor: "pointer" }}>
               <div className="disp" style={{ fontSize: size(13) }}>{x.name}</div>
