@@ -263,7 +263,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0907-0557";
+const BUILD = "0907-0600";
 
 let SCALE = 1;
 function px(n) {
@@ -2273,14 +2273,24 @@ function SlotRowEditor({ slot, slotDef, catalog, isFirst, canMoveUp, canMoveDown
 }
 
 function ExerciseNameField({ slot, catalog, size, onRename, onPick }) {
-  // The typed text lives here and is only written to the slot when the name is
+  // The typed text lives here and is written to the slot only when the name is
   // settled — on pick, on Enter or on leaving the field. Saving on every
   // keystroke made the row count as named after one letter, which closed this
   // field before any suggestion could be read.
   const [text, setText] = useState(slot.exercise || "");
+  // Tracked separately from the text: after picking, the text matches the
+  // chosen exercise and would otherwise keep matching itself, leaving the
+  // list open over the fields below.
+  const [listOpen, setListOpen] = useState(false);
   const hits = searchExercises(catalog, text);
 
   const commit = () => { if (text.trim()) onRename(slot.slotId, text.trim()); };
+
+  const choose = (x) => {
+    setText(x.name);
+    setListOpen(false);
+    onPick({ ...slot, ...x, exercise: x.name });
+  };
 
   return (
     <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
@@ -2288,17 +2298,18 @@ function ExerciseNameField({ slot, catalog, size, onRename, onPick }) {
         autoFocus
         value={text}
         placeholder={t("newExercise")}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => { setText(e.target.value); setListOpen(true); }}
         onBlur={commit}
-        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); commit(); } }}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); setListOpen(false); commit(); } }}
         style={{ ...input, padding: "4px 8px", fontSize: size(14), width: "100%" }}
       />
-      {text.trim() !== "" && hits.length > 0 && (
+      {listOpen && text.trim() !== "" && hits.length > 0 && (
         <div style={{ position: "absolute", left: 0, right: 0, top: "100%", zIndex: 30, marginTop: 2,
                       background: "#1E2126", border: "1px solid #C81E3A", maxHeight: 190, overflowY: "auto" }}>
           {hits.map((x) => (
-            <button key={x.name} onMouseDown={(e) => e.preventDefault()}
-              onClick={() => onPick({ ...slot, ...x, exercise: x.name })}
+            <button key={x.name}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => choose(x)}
               style={{ display: "block", width: "100%", textAlign: "left", background: "none",
                        border: "none", borderBottom: "1px solid #2A2D33", padding: "7px 10px", cursor: "pointer" }}>
               <div className="disp" style={{ fontSize: size(13) }}>{x.name}</div>
