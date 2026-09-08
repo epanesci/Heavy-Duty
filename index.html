@@ -263,7 +263,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0907-0608";
+const BUILD = "0908-1856";
 
 let SCALE = 1;
 function px(n) {
@@ -2158,6 +2158,18 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
 // One exercise, fully configured in place. This is the whole editor: it is the
 // same view whether the exercise was just added or is being changed, and every
 // field appears exactly once.
+// Declared here, not inside the editor: a component created during render is a
+// new type every time, which makes React discard the inputs underneath it and
+// take the focus away on every keystroke.
+function Field({ label, size, children }) {
+  return (
+    <label style={{ display: "block", minWidth: 0 }}>
+      <span className="mono" style={{ fontSize: size(9), color: "#8A8D93", display: "block", textAlign: "center", marginBottom: 2 }}>{label}</span>
+      {children}
+    </label>
+  );
+}
+
 function SlotRowEditor({ slot, slotDef, catalog, isFirst, canMoveUp, canMoveDown, size, onChange, onMove, onDelete, onDone }) {
   const [draft, setDraft] = useState(slot);
   const s = size || px;
@@ -2172,13 +2184,6 @@ function SlotRowEditor({ slot, slotDef, catalog, isFirst, canMoveUp, canMoveDown
     background: "none", border: "none", padding: 3, flexShrink: 0,
     color: enabled ? "#8A8D93" : "#23262B", cursor: enabled ? "pointer" : "default",
   });
-  const Field = ({ label, children }) => (
-    <label style={{ display: "block", minWidth: 0 }}>
-      <span className="mono" style={{ fontSize: s(9), color: "#8A8D93", display: "block", textAlign: "center", marginBottom: 2 }}>{label}</span>
-      {children}
-    </label>
-  );
-
   return (
     <div style={{ ...card, marginBottom: 4, padding: "8px 10px", border: "1px solid #C81E3A" }}>
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -2201,7 +2206,7 @@ function SlotRowEditor({ slot, slotDef, catalog, isFirst, canMoveUp, canMoveDown
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr 1fr", gap: 5, marginTop: 7 }}>
-        <Field label={t("weight")}>
+        <Field label={t("weight")} size={s}>
           <div style={{ display: "flex", gap: 4 }}>
             <input type="number" className="mono" value={draft.targetWeight ?? ""}
               onChange={(e) => set({ targetWeight: e.target.value === "" ? "" : Number(e.target.value) })}
@@ -2217,30 +2222,30 @@ function SlotRowEditor({ slot, slotDef, catalog, isFirst, canMoveUp, canMoveDown
         </Field>
 
         {draft.timeBased ? (
-          <Field label={t("seconds")}>
+          <Field label={t("seconds")} size={s}>
             <input type="number" className="mono" value={draft.targetSeconds ?? ""}
               onChange={(e) => set({ targetSeconds: e.target.value === "" ? "" : Number(e.target.value) })} style={numStyle} />
           </Field>
         ) : (
-          <Field label={t("reps")}>
+          <Field label={t("reps")} size={s}>
             <input type="number" className="mono" value={draft.targetReps ?? ""}
               onChange={(e) => set({ targetReps: e.target.value === "" ? "" : Number(e.target.value) })} style={numStyle} />
           </Field>
         )}
 
         {!draft.timeBased && draft.protocol === "negativas" && (
-          <Field label={t("negatives")}>
+          <Field label={t("negatives")} size={s}>
             <input type="number" className="mono" value={draft.targetNegatives ?? ""}
               onChange={(e) => set({ targetNegatives: e.target.value === "" ? "" : Number(e.target.value) })} style={numStyle} />
           </Field>
         )}
         {!draft.timeBased && draft.protocol === "rest_pause" && (
           <>
-            <Field label="+ RP">
+            <Field label="+ RP" size={s}>
               <input type="number" className="mono" value={draft.targetExtra1 ?? ""}
                 onChange={(e) => set({ targetExtra1: e.target.value === "" ? "" : Number(e.target.value) })} style={numStyle} />
             </Field>
-            <Field label="+ RP">
+            <Field label="+ RP" size={s}>
               <input type="number" className="mono" value={draft.targetExtra2 ?? ""}
                 onChange={(e) => set({ targetExtra2: e.target.value === "" ? "" : Number(e.target.value) })} style={numStyle} />
             </Field>
@@ -2302,7 +2307,7 @@ function ExerciseNameField({ slot, catalog, size, onRename, onPick }) {
   return (
     <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
       <input
-        autoFocus
+        autoFocus={!slot.exercise}
         value={text}
         placeholder={t("newExercise")}
         onChange={(e) => { setText(e.target.value); setListOpen(true); }}
