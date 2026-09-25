@@ -263,7 +263,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0925-0721";
+const BUILD = "0925-0732";
 
 let SCALE = 1;
 function px(n) {
@@ -570,16 +570,19 @@ function shortName(name) {
 function MetaRow({ slot }) {
   const unit = slot.weightUnit || "kg";
   const weightText = slot.targetWeight != null && slot.targetWeight !== "" ? `${slot.targetWeight}${unit}` : "";
-  let rest;
-  if (slot.timeBased) rest = <>{slot.targetSeconds}s (hold)</>;
-  else if (slot.protocol === "negativas") rest = <>{slot.targetReps} rep + {slot.targetNegatives ?? 0} neg</>;
-  else if (slot.protocol === "rest_pause") rest = (
-    <>{slot.targetReps} rep + {slot.targetExtra1 ?? 0} + {slot.targetExtra2 ?? 0} <span style={{ fontSize: "1.2em", color: "#C81E3A", fontWeight: 700 }}>RP</span></>
-  );
-  else rest = <>{slot.targetReps} reps</>;
+  // Reading order: theoretical 1RM, reps, working weight, then the extra reps.
+  let repsText, extra = null;
+  if (slot.timeBased) repsText = <>{slot.targetSeconds}s (hold)</>;
+  else if (slot.protocol === "negativas") {
+    repsText = <>{slot.targetReps} rep</>;
+    extra = <>+ {slot.targetNegatives ?? 0} neg</>;
+  } else if (slot.protocol === "rest_pause") {
+    repsText = <>{slot.targetReps} rep</>;
+    extra = <>+ {slot.targetExtra1 ?? 0} + {slot.targetExtra2 ?? 0} <span style={{ fontSize: "1.2em", color: "#C81E3A", fontWeight: 700 }}>RP</span></>;
+  } else repsText = <>{slot.targetReps} reps</>;
   const oneRM = slot.timeBased ? null : calcOneRM(slot.targetWeight, slot.targetReps);
   return (
-    <span>{weightText} {rest}{oneRM ? <> (<b>{oneRM}{unit}</b>)</> : ""}</span>
+    <span>{oneRM ? <><b>{oneRM}{unit}</b> </> : ""}{repsText} {weightText}{extra ? <> {extra}</> : ""}</span>
   );
 }
 
