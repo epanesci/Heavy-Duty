@@ -263,7 +263,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0925-0735";
+const BUILD = "0925-0739";
 
 let SCALE = 1;
 function px(n) {
@@ -1479,11 +1479,13 @@ function PrevRecordLine({ workouts, exercise, oneLine }) {
   if (!rec) return null;
   const { entry: e, date } = rec;
   const unit = e.weightUnit || "kg";
-  let rest;
-  if (e.timeBased) rest = <>{e.seconds}s (hold)</>;
-  else if (e.protocol === "negativas") rest = <>{e.reps} rep + {e.negatives || 0} neg</>;
-  else if (e.protocol === "rest_pause") rest = <>{(e.repsBreakdown || []).filter(Boolean).reduce((a, v) => a + Number(v), 0) || e.reps} rep ({(e.repsBreakdown || []).join("+")})</>;
-  else rest = <>{e.reps} reps</>;
+  // Same reading order as the day view and the history: 1RM, reps, weight, extras.
+  const bd = e.protocol === "rest_pause" && e.repsBreakdown ? e.repsBreakdown.filter(Boolean) : null;
+  let repsText, extraText = "";
+  if (e.timeBased) repsText = <>{e.seconds}s (hold)</>;
+  else if (e.protocol === "negativas") { repsText = <>{e.reps} rep</>; extraText = ` + ${e.negatives || 0} neg`; }
+  else if (bd) { repsText = <>{bd[0]} rep</>; extraText = bd.length > 1 ? ` + ${bd.slice(1).join(" + ")}` : ""; }
+  else repsText = <>{e.reps} reps</>;
   // Same rule as the targets: positives only, never the rest-pause extras.
   const positiveReps = e.protocol === "rest_pause" && e.repsBreakdown
     ? Number(e.repsBreakdown[0]) || 0
@@ -1491,8 +1493,9 @@ function PrevRecordLine({ workouts, exercise, oneLine }) {
   const oneRM = e.timeBased ? null : calcOneRM(e.weight, positiveReps);
   return (
     <span className="mono" style={{ fontSize: oneLine ? 10 : 11, color: "#8A8D93", marginTop: oneLine ? 0 : 4, display: oneLine ? "inline" : "block", whiteSpace: oneLine ? "nowrap" : undefined }}>
-      {oneLine ? "▲ " : `${t("previousRecord")}: `}<span>{e.weight}{unit} {rest}</span>
-      {oneRM ? <> (<b>{oneRM}{unit}</b>)</> : ""} ({fmtDate(date)})
+      {oneLine ? "▲ " : `${t("previousRecord")}: `}
+      {oneRM ? <>(<b>{oneRM}{unit}</b>) </> : ""}
+      <span>{repsText} {e.weight}{unit}{extraText}</span> ({fmtDate(date)})
     </span>
   );
 }
@@ -2125,16 +2128,23 @@ function Training({ settings, setSettings, workouts, setWorkouts, routineConfig,
                                   ? Number(entry.repsBreakdown[0]) || 0
                                   : Number(entry.reps) || 0;
                                 const rm = entry.timeBased ? null : calcOneRM(entry.weight, positives);
+                                const u = entry.weightUnit || "kg";
+                                // Same reading order as the day view: 1RM, reps, weight, extras.
+                                const bd = entry.protocol === "rest_pause" && entry.repsBreakdown
+                                  ? entry.repsBreakdown.filter((r) => r) : null;
+                                const repsTxt = entry.timeBased
+                                  ? `${entry.seconds || 0}s`
+                                  : `${bd ? bd[0] : (entry.reps || 0)} ${t("repsWord")}`;
+                                const extraTxt = bd
+                                  ? (bd.length > 1 ? ` + ${bd.slice(1).join(" + ")}` : "")
+                                  : (entry.negatives ? ` + ${entry.negatives} neg` : "");
                                 return (
                                   <span className="mono" style={{ fontSize: px(11), color: "#8A8D93", whiteSpace: "nowrap" }}>
                                     <span style={{ color: "#3A3F47" }}>#{num} </span>
-                                    {entry.weight ? `${entry.weight}${entry.weightUnit || "kg"} · ` : ""}
-                                    {entry.timeBased
-                                      ? `${entry.seconds || 0}s`
-                                      : entry.protocol === "rest_pause" && entry.repsBreakdown
-                                      ? `${entry.repsBreakdown.filter((r) => r).join("+")} ${t("repsWord")}`
-                                      : `${entry.reps || 0} ${t("repsWord")}${entry.negatives ? ` + ${entry.negatives} neg` : ""}`}
-                                    {rm ? <> (<b>{rm}{entry.weightUnit || "kg"}</b>)</> : ""}
+                                    {rm ? <>(<b>{rm}{u}</b>) </> : ""}
+                                    {repsTxt}
+                                    {entry.weight ? ` ${entry.weight}${u}` : ""}
+                                    {extraTxt}
                                   </span>
                                 );
                               })() : (
