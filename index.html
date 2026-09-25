@@ -263,7 +263,7 @@ function useIsWide() {
 
 // Desktop renders everything a notch larger. Kept as a real size change rather
 // than a zoom so media queries keep measuring the true viewport width.
-const BUILD = "0925-0732";
+const BUILD = "0925-0735";
 
 let SCALE = 1;
 function px(n) {
@@ -582,7 +582,7 @@ function MetaRow({ slot }) {
   } else repsText = <>{slot.targetReps} reps</>;
   const oneRM = slot.timeBased ? null : calcOneRM(slot.targetWeight, slot.targetReps);
   return (
-    <span>{oneRM ? <><b>{oneRM}{unit}</b> </> : ""}{repsText} {weightText}{extra ? <> {extra}</> : ""}</span>
+    <span>{oneRM ? <>(<b>{oneRM}{unit}</b>) </> : ""}{repsText} {weightText}{extra ? <> {extra}</> : ""}</span>
   );
 }
 
